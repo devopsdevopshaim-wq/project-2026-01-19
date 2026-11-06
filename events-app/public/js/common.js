@@ -62,7 +62,7 @@ const myOrders = {
 
 // PWA - התקנה למסך הבית
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register(location.pathname.startsWith('/admin') ? '/admin/sw.js' : '/sw.js').catch(() => {}));
 }
 let deferredInstall = null;
 window.addEventListener('beforeinstallprompt', (e) => {

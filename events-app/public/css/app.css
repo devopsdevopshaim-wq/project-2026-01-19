@@ -140,3 +140,28 @@ tr.stuck td { background: color-mix(in srgb, var(--bad) 7%, transparent); }
   .product .thumb { font-size: 2.2rem; }
   .product .row.between { flex-direction: column; align-items: stretch; gap: 6px; }
 }
+
+/* ---------- מראה אפליקציה ---------- */
+.bottom-nav { display: none; }
+@media (max-width: 640px) {
+  body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .bottom-nav {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--surface);
+    border-top: 1px solid var(--border); padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, .06);
+  }
+  .bottom-nav button, .bottom-nav a {
+    flex: 1; background: none; border: 0; color: var(--muted); font: inherit; font-size: .72rem; font-weight: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; cursor: pointer; text-decoration: none; min-height: 48px;
+  }
+  .bottom-nav .ico { font-size: 1.35rem; line-height: 1; filter: grayscale(.6); }
+  .bottom-nav .active { color: var(--primary); }
+  .bottom-nav .active .ico { filter: none; }
+  .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+}
+@media (display-mode: standalone) {
+  .topbar { padding-top: env(safe-area-inset-top); }
+  [data-install] { display: none !important; }
+}
+.sheet-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.sheet-list button { min-height: 64px; }

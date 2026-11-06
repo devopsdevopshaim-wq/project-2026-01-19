@@ -8,13 +8,17 @@
 
   // ---------- ניווט ----------
   function go(view) {
-    $$('#nav .tab').forEach((t) => t.classList.toggle('active', t.dataset.view === view));
+    $$('[data-view]').forEach((t) => t.classList.toggle('active', t.dataset.view === view));
     ['store', 'events', 'orders'].forEach((v) => $(`#view-${v}`).classList.toggle('hidden', v !== view));
     if (view === 'events') renderEvents();
     if (view === 'orders') renderOrders();
     history.replaceState(null, '', `#${view}`);
   }
-  $('#nav').addEventListener('click', (e) => { const t = e.target.closest('[data-view]'); if (t) go(t.dataset.view); });
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-view]');
+    if (t) go(t.dataset.view);
+    if (e.target.closest('[data-open-cart]')) openCart();
+  });
 
   // ---------- חנות ----------
   function productCard(p) {

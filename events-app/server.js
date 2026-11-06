@@ -82,6 +82,7 @@ app.get('/pay/return', (req, res) => {
 
 // ---------- קבצים סטטיים ----------
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '30d', immutable: true }));
+app.get('/admin.html', (req, res) => res.redirect(301, '/admin/'));
 app.get('/e/:code', (req, res) => res.sendFile(path.join(__dirname, 'public', 'event.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -92,7 +93,7 @@ app.use((err, req, res, _next) => {
 });
 
 if (require.main === module) {
-  app.listen(config.port, () => console.log(`השרת פועל: ${config.publicUrl}  |  ניהול: ${config.publicUrl}/admin.html`));
+  app.listen(config.port, () => console.log(`השרת פועל: ${config.publicUrl}  |  ניהול: ${config.publicUrl}/admin/`));
 }
 
 module.exports = app;

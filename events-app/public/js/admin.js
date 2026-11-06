@@ -433,7 +433,8 @@
   const VIEWS = { dashboard, events, orders, products, collections, suppliers, couriers, cities, guests, settings };
   async function go(v, arg) {
     current = v;
-    $$('#nav .tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
+    $$('[data-view]').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
+    closeModal();
     view.innerHTML = '<p class="muted">טוען…</p>';
     try { await VIEWS[v](arg); } catch (e) {
       if (e.status === 401) return showLogin();
@@ -441,7 +442,11 @@
     }
     history.replaceState(null, '', `#${v}`);
   }
-  $('#nav').addEventListener('click', (e) => { const t = e.target.closest('[data-view]'); if (t) go(t.dataset.view); });
+  document.addEventListener('click', (e) => { const t = e.target.closest('[data-view]'); if (t) go(t.dataset.view); });
+  // תפריט "עוד" במובייל - כל המסכים
+  $('#more-btn').onclick = () => openModal(`<div class="row between"><h2 style="margin:0">תפריט</h2><button class="icon-btn" data-close>✕</button></div>
+    <div class="sheet-list" style="margin-top:12px">${$$('#nav [data-view]').map((t) => `<button class="btn soft" data-view="${t.dataset.view}">${esc(t.textContent)}</button>`).join('')}
+    <a class="btn soft" href="/" target="_blank">🛍️ אפליקציית הלקוח</a><button class="btn soft" data-install>📲 התקנת אפליקציית הניהול</button></div>`);
   window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (VIEWS[h] && h !== current) go(h); });
 
   async function loadRefs() {

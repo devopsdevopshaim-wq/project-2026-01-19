@@ -7,6 +7,8 @@
   <meta name="description" content="מגנטים, בלוקים, מסגרות, חבילות ומתנות לאירועים">
   <title>רגעים - מזכרות לאירועים</title>
   <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="רגעים">
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="stylesheet" href="/css/app.css">
@@ -19,7 +21,7 @@
       <button class="btn soft sm hidden hide-sm" data-install>📲 התקנה</button>
       <button class="icon-btn" id="cart-btn" aria-label="סל קניות">🛒<span class="count-dot hidden" id="cart-count">0</span></button>
     </div>
-    <div class="wrap" style="padding-top:0">
+    <div class="wrap hide-sm" style="padding-top:0">
       <nav class="tabs" id="nav">
         <button class="tab active" data-view="store">🛍️ חנות</button>
         <button class="tab" data-view="events">📸 האירועים שלי</button>
@@ -51,6 +53,14 @@
       </div>
     </section>
   </main>
+
+  <!-- סרגל ניווט תחתון (אפליקציה) -->
+  <nav class="bottom-nav" aria-label="ניווט ראשי">
+    <button data-view="store" class="active"><span class="ico">🛍️</span>חנות</button>
+    <button data-view="events"><span class="ico">📸</span>האירועים שלי</button>
+    <button data-view="orders"><span class="ico">📦</span>הזמנות</button>
+    <button data-open-cart><span class="ico">🛒</span>סל</button>
+  </nav>
 
   <!-- סל קניות וקופה -->
   <div id="cart-bg" class="drawer-bg hidden"></div>
