@@ -250,8 +250,8 @@ G.renderers3D = [];
     const ld = new GLTFLoader();
     const base = new URL('../models/', import.meta.url).href;
     await Promise.all([
-      ...Object.keys(UNIT_CFG).map(async k => { ASSETS.units[k] = prepUnit(k, await ld.loadAsync(base + UNIT_CFG[k].file + '.glb')); }),
-      ...SCENERY.map(async n => { ASSETS.scenery[n] = prepScenery(await ld.loadAsync(base + n + '.glb')); })
+      ...Object.keys(UNIT_CFG).map(async k => { ASSETS.units[k] = prepUnit(k, await ld.loadAsync(base + UNIT_CFG[k].file + (G.MODEL_EXT || '.glb'))); }),
+      ...SCENERY.map(async n => { ASSETS.scenery[n] = prepScenery(await ld.loadAsync(base + n + (G.MODEL_EXT || '.glb'))); })
     ]);
     ASSETS.ready = true;
     for (const k in PROTO) delete PROTO[k];
