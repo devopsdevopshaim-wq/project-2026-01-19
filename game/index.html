@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>חזית הניאון</title>
+<meta name="description" content="משחק אסטרטגיה לכיבוש שטחים – 5 עולמות, מחקר, יחידות ומשימות.">
+<meta name="theme-color" content="#14062b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&family=Secular+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= TITLE ================= -->
+  <section id="scr-title" class="screen show">
+    <canvas id="title-cv"></canvas>
+    <div class="title-wrap">
+      <div class="logo">
+        <div class="logo-top">NEON WARFRONT</div>
+        <h1 class="logo-main">חזית הניאון</h1>
+        <div class="logo-sub">מלחמת השטחים</div>
+      </div>
+      <div class="rank-card" id="rank-card"></div>
+      <div class="menu">
+        <button class="btn big primary" id="btn-continue" hidden></button>
+        <button class="btn big" data-go="campaign">קמפיין</button>
+        <button class="btn big" data-go="conquest">כיבוש עולם</button>
+        <button class="btn big" data-go="research">מעבדת מחקר</button>
+        <div class="menu-row">
+          <button class="btn" data-go="achievements">הישגים</button>
+          <button class="btn" data-go="howto">איך משחקים</button>
+          <button class="btn" data-go="settings">הגדרות</button>
+        </div>
+      </div>
+      <button class="install-btn" id="btn-install" hidden>התקן כאפליקציה</button>
+    </div>
+  </section>
+
+  <!-- ================= WORLDS ================= -->
+  <section id="scr-worlds" class="screen">
+    <header class="scr-head">
+      <button class="btn icon back" data-back>›</button>
+      <h2 id="worlds-title">בחר עולם</h2>
+      <div class="tp-pill" data-tp></div>
+    </header>
+    <div class="worlds" id="worlds-list"></div>
+  </section>
+
+  <!-- ================= COUNTRIES ================= -->
+  <section id="scr-countries" class="screen">
+    <header class="scr-head">
+      <button class="btn icon back" data-back>›</button>
+      <h2 id="countries-title"></h2>
+      <div class="tp-pill" data-tp></div>
+    </header>
+    <div class="countries-layout">
+      <div class="country-map"><canvas id="country-cv"></canvas></div>
+      <div class="country-list" id="country-list"></div>
+    </div>
+  </section>
+
+  <!-- ================= RESEARCH ================= -->
+  <section id="scr-research" class="screen">
+    <header class="scr-head">
+      <button class="btn icon back" data-back>›</button>
+      <h2>מעבדת מחקר</h2>
+      <div class="tp-pill" data-tp></div>
+    </header>
+    <p class="hint">נקודות מחקר (נק״מ) מתקבלות מניצחונות, כוכבים ומשימות צד. המחקר נשמר לתמיד.</p>
+    <div class="research" id="research-tree"></div>
+  </section>
+
+  <!-- ================= ACHIEVEMENTS ================= -->
+  <section id="scr-achievements" class="screen">
+    <header class="scr-head">
+      <button class="btn icon back" data-back>›</button>
+      <h2>הישגים</h2>
+      <div></div>
+    </header>
+    <div class="ach-list" id="ach-list"></div>
+  </section>
+
+  <!-- ================= GAME ================= -->
+  <section id="scr-game" class="screen">
+    <canvas id="map-cv"></canvas>
+    <div class="hud-top">
+      <button class="btn icon" id="btn-pause"></button>
+      <div class="res">
+        <div class="res-item gold"><span id="h-credits">0</span><small id="h-income">+0</small></div>
+        <div class="res-item"><small>תור</small><span id="h-turn">1</span></div>
+      </div>
+      <div class="facs" id="h-facs"></div>
+      <button class="btn icon" id="btn-obj"></button>
+    </div>
+    <div class="ability-bar" id="ability-bar"></div>
+    <div class="hint-bar" id="hint-bar"></div>
+    <div class="panel" id="panel"></div>
+    <button class="btn end-turn" id="btn-end">סיים תור</button>
+    <div class="ai-banner" id="ai-banner"></div>
+  </section>
+
+  <!-- battle overlay -->
+  <div id="battle" class="battle">
+    <canvas id="battle-cv"></canvas>
+    <div class="battle-head"><div id="battle-title"></div><div id="battle-place"></div></div>
+    <div class="battle-banner" id="battle-banner"></div>
+    <button class="btn" id="battle-skip">דלג ⏭</button>
+  </div>
+
+  <!-- modal -->
+  <div id="modal" class="modal"><div class="modal-card" id="modal-card"></div></div>
+  <div id="toasts"></div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/mapgen.js"></script>
+<script src="js/render.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
