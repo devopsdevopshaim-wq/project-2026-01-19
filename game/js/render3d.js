@@ -621,6 +621,7 @@ class Renderer3D {
         for (const part of A.parts) {
           const mat = tint ? tintMat(part.mat, tint, tintAmt) : part.mat;
           const im = new THREE.InstancedMesh(part.geo, mat, mine.length);
+          im.userData.pts = mine.map(p => new THREE.Vector3(p[0], p[1], p[2]));
           mine.forEach((p, i) => {
             dummy.position.set(p[0], p[1] - 0.02, p[2]); dummy.rotation.set(0, p[4] || 0, 0); dummy.scale.setScalar(height * p[3]); dummy.updateMatrix();
             im.setMatrixAt(i, dummy.matrix.clone().multiply(part.m));
@@ -639,7 +640,7 @@ class Renderer3D {
       const mt = ['#d6c7a8', '#c8743f', '#eef4ff', '#3a2c2c', '#8a8fc0'][wi];
       instModel(['mountain1', 'mountain2'], lists.mount, 1.05, mt, 0.55);
       const bt = [null, '#e9cf9c', '#dfe8f5', '#5a4646', null][wi];
-      instModel(BUILDINGS.slice(0, 9), lists.house, 1, bt, wi === 3 ? 0.55 : 0.3);
+      instModel(BUILDINGS.slice(0, 9), lists.house, 0.72, bt, wi === 3 ? 0.55 : 0.3);
       if (wi === 4) { // megacity: real blocks among the neon towers + rooftop antennas
         const extra = lists.bld.filter((_, i) => i % 3 === 0).map(p => [p[0], p[1], p[2], R.range(0.6, 0.95), Math.floor(R() * 4) * Math.PI / 2]);
         instModel(['b_6story_stack', 'b_4story'], extra, 1, '#7a6cff', 0.45);
@@ -1435,3 +1436,4 @@ function webglOK() {
 if (webglOK()) { G.Renderer2D = G.Renderer; G.Renderer = Renderer3D; G.has3D = true; }
 G.THREE = THREE;
 G.__makeUnit = makeUnit;
+G.__r3d = { THREE, makeUnit, mats, geo, mesh, TEX, ASSETS, S, topY, Renderer3D };

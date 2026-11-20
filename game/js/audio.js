@@ -179,6 +179,8 @@ G.sfx = (function () {
       play((enemy ? 'b_' : 'a_') + line, { vol: 1, vary: 0.03, radio: true, bus: voiceBus });
     },
     shield() { play('shield', { vol: 0.7 }); },
+    whistle() { if (!ac || !on() || !throttle('whistle', 400)) return; const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(420, t + 0.55); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.6); },
+    flak() { if (throttle('flak', 120)) play('expl', { vol: 0.22, rate: 1.7 }); },
     engine() { if (throttle('engine', 1500)) play('engine', { vol: 0.25, rate: 0.7 }); },
     battleEnd(good) {
       play(good ? 'levelup' : 'defeat', { vol: 0.6, vary: 0 }) || (good ? this._arp(1) : this._arp(0));
