@@ -161,10 +161,18 @@ button { font-family: inherit; color: inherit; }
 .ai-banner.show { display: block; animation: fadeIn .3s; }
 
 /* ---------- battle ---------- */
-.battle { position: fixed; inset: 0; z-index: 50; display: none; background: #000; }
+.battle { position: fixed; inset: 0; z-index: 50; display: none; background: transparent; pointer-events: none; }
+.battle::before, .battle::after { content: ''; position: absolute; left: 0; right: 0; height: 9vh; background: #000; transition: transform .5s ease; z-index: 1; }
+.battle::before { top: 0; transform: translateY(-100%); }
+.battle::after { bottom: 0; transform: translateY(100%); }
+.battle.show::before, .battle.show::after { transform: none; }
+.battle-head, .battle-banner, #battle-skip { z-index: 2; }
+#battle-skip { pointer-events: auto; }
+#map-ov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+body.cine .hud-top, body.cine .panel, body.cine .end-turn, body.cine .ability-bar, body.cine .hint-bar, body.cine #toasts { opacity: 0; pointer-events: none; transition: opacity .3s; }
 .battle.show { display: block; animation: fadeIn .25s; }
-#battle-cv { width: 100%; height: 100%; display: block; }
-.battle-head { position: absolute; top: 28px; left: 0; right: 0; text-align: center; pointer-events: none; }
+#battle-cv { display: none; }
+.battle-head { position: absolute; top: calc(9vh + 10px); left: 0; right: 0; text-align: center; pointer-events: none; }
 #battle-title { font-family: 'Secular One', sans-serif; font-size: clamp(16px, 3.4vw, 24px); text-shadow: 0 2px 10px #000; }
 #battle-place { color: #ffd27a; font-size: 13px; margin-top: 52px; }
 #battle-skip { position: absolute; bottom: calc(34px + var(--safe-b)); left: 50%; transform: translateX(-50%); }

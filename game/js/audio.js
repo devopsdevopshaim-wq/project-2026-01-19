@@ -81,7 +81,7 @@ G.sfx = (function () {
     select() { tone(660, 0.05, 'triangle', 0.1); tone(990, 0.06, 'triangle', 0.08, 0, 0.05); },
     buy() { tone(523, 0.08, 'square', 0.07); tone(784, 0.1, 'square', 0.07, 0, 0.07); },
     shot() { noise(0.08, 0.12, 2500, 'bandpass'); },
-    boom(v = 1) { noise(0.6, 0.35 * v, 500); tone(90, 0.4, 'sine', 0.3 * v, -60); },
+    boom(v = 1) { const n = performance.now(); if (n - (this._lb || 0) < 70) return; this._lb = n; noise(0.6, 0.35 * v, 500); tone(90, 0.4, 'sine', 0.3 * v, -60); },
     capture() { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.14, 'square', 0.07, 0, i * 0.07)); },
     win() { [392, 523, 659, 784, 1046].forEach((f, i) => tone(f, 0.25, 'sawtooth', 0.06, 0, i * 0.09)); },
     lose() { [392, 330, 262, 196].forEach((f, i) => tone(f, 0.3, 'sawtooth', 0.06, 0, i * 0.12)); },

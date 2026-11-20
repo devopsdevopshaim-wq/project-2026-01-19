@@ -91,6 +91,7 @@ G.winChance = function (match, attUnits, attOwner, tid, n = 160) {
 /* ===== cinematic battle scene ===== */
 G.BattleScene = {
   play(opts) {
+    if (G.ctl.rend && G.ctl.rend.battle) return G.ctl.rend.battle(opts);
     return new Promise(resolve => {
       const ov = document.getElementById('battle');
       const cv = document.getElementById('battle-cv');

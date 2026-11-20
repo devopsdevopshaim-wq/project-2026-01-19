@@ -74,7 +74,7 @@ G.ui = {
         else this.go('countries');
       };
       list.appendChild(card);
-      requestAnimationFrame(() => G.drawThumb(cv, wi));
+      setTimeout(() => G.drawThumb(cv, wi), 60 + wi * 90);
     });
   },
 
@@ -177,6 +177,7 @@ G.ui = {
     const card = this.modal(`<h2>הגדרות</h2>
       <div class="setting"><span>מוזיקה</span>${seg('music', [[true, 'פועל'], [false, 'כבוי']])}</div>
       <div class="setting"><span>אפקטים קוליים</span>${seg('sfx', [[true, 'פועל'], [false, 'כבוי']])}</div>
+      <div class="setting"><span>איכות גרפיקה</span>${seg('gfx', [['high', 'גבוהה'], ['low', 'חסכונית']])}</div>
       <div class="setting"><span>אנימציית קרב</span>${seg('anim', [['all', 'הכל'], ['mine', 'שלי'], ['off', 'כבוי']])}</div>
       <div class="setting"><span>קושי ברירת מחדל</span>${seg('diff', [['easy', 'קל'], ['normal', 'רגיל'], ['hard', 'קשה']])}</div>
       <div class="m-actions"><button class="btn danger" id="b-reset">אפס התקדמות</button><button class="btn primary" id="b-ok">סגור</button></div>`);
@@ -185,6 +186,7 @@ G.ui = {
       s[sg.dataset.key] = v; G.meta.save();
       sg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
       if (sg.dataset.key === 'music') { G.sfx.unlock(); G.sfx.music(v); }
+      if (sg.dataset.key === 'gfx' && G.ctl.rend && G.ctl.rend.setQuality) G.ctl.rend.setQuality(v);
       G.sfx.click();
     }));
     $('#b-ok').onclick = () => this.closeModal();
@@ -217,6 +219,11 @@ G.thumbTerrain = wi => G.thumbCache[wi] || (G.thumbCache[wi] = G.drawTerrain(G.g
 G.drawThumb = function (cv, wi) {
   const w = G.WORLDS[wi], map = G.getMap(wi);
   const r = cv.getBoundingClientRect();
+  if (G.snapshot3D && r.width > 0) {
+    const img = G.snapshot3D(wi, Math.round(r.width), Math.round(r.height), 'persp');
+    cv.width = img.width; cv.height = img.height; cv.getContext('2d').drawImage(img, 0, 0);
+    return;
+  }
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = r.width * dpr; cv.height = r.height * dpr;
   const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
@@ -233,6 +240,7 @@ G.drawThumb = function (cv, wi) {
 G.countryColors = ['#ff2d95', '#22d8ff', '#ffd23f', '#3dff8f', '#a66bff', '#ff8a3d'];
 G.drawCountryMap = function (wi, hi) {
   const cv = $('#country-cv'); if (!cv) return;
+  if (G.snapshot3D) return G.drawCountryMap3D(wi, hi);
   const map = G.getMap(wi), w = G.WORLDS[wi];
   const r = cv.getBoundingClientRect();
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -276,6 +284,12 @@ G.drawCountryMap = function (wi, hi) {
 G.countryAt = function (wi, e) {
   const cv = $('#country-cv'), map = G.getMap(wi), r = cv.getBoundingClientRect();
   if (!G._cmap) return -1;
+  if (G._cmap.flat) {
+    const mx = (e.clientX - r.left - G._cmap.ox) / G._cmap.s + G._cmap.bx, my = (e.clientY - r.top - G._cmap.oy) / G._cmap.s + G._cmap.bz;
+    let best = -1, bd = Infinity;
+    for (const hx of map.hexes) { if (!hx.land) continue; const d = (hx.x - mx) ** 2 + (hx.y - my) ** 2; if (d < bd) { bd = d; best = hx.tid; } }
+    return bd < (map.r * 1.2) ** 2 ? map.terrs[best].country : -1;
+  }
   const mx = (e.clientX - r.left - G._cmap.ox) / G._cmap.s, my = (e.clientY - r.top - G._cmap.oy) / G._cmap.s;
   let best = -1, bd = Infinity;
   for (const hx of map.hexes) {
@@ -284,6 +298,63 @@ G.countryAt = function (wi, e) {
     if (d < bd) { bd = d; best = hx.tid; }
   }
   return bd < (map.r * 1.2) ** 2 ? map.terrs[best].country : -1;
+};
+
+G.drawCountryMap3D = function (wi, hi) {
+  const cv = $('#country-cv');
+  const map = G.getMap(wi);
+  const r = cv.getBoundingClientRect();
+  if (!r.width) return;
+  const img = G.snapshot3D(wi, 900, Math.round(900 * 0.62), 'top');
+  const b = img.bounds, bx = b.x0 - 30, bz = b.z0 - 30, bw = b.x1 - b.x0 + 60, bh = b.z1 - b.z0 + 60;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = r.width * dpr; cv.height = r.height * dpr;
+  const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+  const w = G.WORLDS[wi];
+  ctx.fillStyle = w.sea[0]; ctx.fillRect(0, 0, r.width, r.height);
+  const s = Math.min(r.width / bw, r.height / bh);
+  const ox = (r.width - bw * s) / 2, oy = (r.height - bh * s) / 2;
+  G._cmap = { s, ox, oy, bx, bz, flat: true };
+  ctx.drawImage(img, ox, oy, bw * s, bh * s);
+  ctx.save(); ctx.translate(ox, oy); ctx.scale(s, s); ctx.translate(-bx, -bz);
+  const hexP = (p, hx) => { for (let k = 0; k < 6; k++) { const a = Math.PI / 180 * (60 * k - 30); const X = hx.x + 26 * Math.cos(a), Y = hx.y + 26 * Math.sin(a); k ? p.lineTo(X, Y) : p.moveTo(X, Y); } p.closePath(); };
+  map.countries.forEach((C, ci) => {
+    const p = new Path2D();
+    for (const t of C.tids) for (const i of map.terrs[t].hexes) hexP(p, map.hexes[i]);
+    const won = G.meta.stars('w' + wi + 'c' + ci) > 0, un = G.meta.countryUnlocked(wi, ci);
+    ctx.fillStyle = G.alpha(won ? '#22d8ff' : G.countryColors[ci % 6], ci === hi ? 0.5 : un ? 0.22 : 0.05);
+    ctx.fill(p);
+    if (!un) { ctx.fillStyle = 'rgba(5,3,15,.45)'; ctx.fill(p); }
+    const e = new Path2D();
+    for (const t of C.tids) for (const i of map.terrs[t].hexes) {
+      const hx = map.hexes[i];
+      for (let k = 0; k < 6; k++) {
+        const n = hx.nb[k], nh = n >= 0 ? map.hexes[n] : null;
+        if (nh && nh.land && map.terrs[nh.tid].country === ci) continue;
+        const a0 = Math.PI / 180 * (60 * k - 30), a1 = Math.PI / 180 * (60 * k + 30);
+        e.moveTo(hx.x + 26 * Math.cos(a0), hx.y + 26 * Math.sin(a0)); e.lineTo(hx.x + 26 * Math.cos(a1), hx.y + 26 * Math.sin(a1));
+      }
+    }
+    ctx.shadowColor = ci === hi ? '#fff' : G.countryColors[ci % 6]; ctx.shadowBlur = 10;
+    ctx.strokeStyle = ci === hi ? '#ffffff' : 'rgba(255,255,255,.75)'; ctx.lineWidth = ci === hi ? 5 : 3; ctx.lineCap = 'round';
+    ctx.stroke(e); ctx.shadowBlur = 0;
+  });
+  ctx.restore();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  map.countries.forEach((C, ci) => {
+    let x = 0, y = 0;
+    for (const t of C.tids) { const hx = map.hexes[map.terrs[t].center]; x += hx.x; y += hx.y; }
+    x = ox + (x / C.tids.length - bx) * s; y = oy + (y / C.tids.length - bz) * s;
+    const un = G.meta.countryUnlocked(wi, ci);
+    const label = (un ? '' : '🔒 ') + C.name;
+    ctx.font = `800 ${Math.max(13, Math.min(18, r.width / 40))}px Rubik`;
+    const tw = ctx.measureText(label).width + 18;
+    ctx.fillStyle = 'rgba(8,5,20,.78)'; ctx.beginPath(); ctx.roundRect(x - tw / 2, y - 14, tw, 40, 10); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(label, x, y - 2);
+    const st = G.meta.stars('w' + wi + 'c' + ci);
+    ctx.font = '13px Rubik'; ctx.fillStyle = '#ffd23f';
+    ctx.fillText('★'.repeat(st) + '☆'.repeat(3 - st), x, y + 15);
+  });
 };
 
 /* ======================================================================
@@ -350,7 +421,10 @@ G.ctl = {
       p.x = e.clientX; p.y = e.clientY;
       if (pts.size === 1) {
         if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) moved = true;
-        if (moved) { r.cam.x -= dx / r.cam.z; r.cam.y -= dy / r.cam.z; r.clampCam(); }
+        if (moved) {
+          if (r.pan) { const rc = cv.getBoundingClientRect(); r.pan(e.clientX - dx - rc.left, e.clientY - dy - rc.top, e.clientX - rc.left, e.clientY - rc.top); }
+          else { r.cam.x -= dx / r.cam.z; r.cam.y -= dy / r.cam.z; r.clampCam(); }
+        }
       } else if (pts.size === 2) {
         const [a, b] = [...pts.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -630,6 +704,7 @@ G.ctl = {
       G.act.move(m, 0, from, to, ch.sel);
       const A = G.map.terrs[from], B = G.map.terrs[to];
       this.rend.addFx({ type: 'arrow', from: [A.cx, A.cy], to: [B.cx, B.cy], col: '#3dfcff', dur: 800 });
+      if (this.rend.convoy) this.rend.convoy(from, to, ch.sel, m.factions[0].color, 0.8);
       G.sfx.select();
       this.select(from); this.refreshHUD();
     };
@@ -674,14 +749,15 @@ G.ctl = {
     this.rend.addFx({ type: 'arrow', from: [A.cx, A.cy], to: [B.cx, B.cy], col: '#ff3b5c', dur: 700 });
     if (!out.res.empty && G.meta.data.settings.anim !== 'off') {
       await G.BattleScene.play({
-        world: m.world, tid: to, result: out.res, fort,
+        world: m.world, tid: to, from, result: out.res, fort,
         att: { units: sel, color: m.factions[0].color, name: m.factions[0].name },
         def: { units: prevUnits, color: this.ownerColor(prev), name: this.ownerName(prev) },
         place: `${B.name} · ${G.TTYPES[B.type].name}`,
         banner: out.captured ? 'השטח נכבש!' : 'ההתקפה נהדפה',
         good: out.captured
       });
-    } else await G.sleep(350);
+    } else if (this.rend.convoy) await this.rend.convoy(from, to, sel, m.factions[0].color, 0.7);
+    else await G.sleep(350);
     this.afterCombat(to, out, 0);
     this.busy = false;
     this.select(out.captured ? to : from);
@@ -730,13 +806,14 @@ G.ctl = {
           if (involve && !ev.out.res.empty && anim === 'all') {
             const pre = G.cloneU(ev.out.res.rounds.length ? this.reconstructDef(ev.out.res) : {});
             await G.BattleScene.play({
-              world: m.world, tid: ev.to, result: ev.out.res, fort: m.terr[ev.to].fort,
+              world: m.world, tid: ev.to, from: ev.from, result: ev.out.res, fort: m.terr[ev.to].fort,
               att: { units: ev.sent, color: f.color, name: f.name },
               def: { units: pre, color: m.factions[0].color, name: m.factions[0].name },
               place: `${B.name} · ${G.TTYPES[B.type].name}`,
               banner: ev.out.captured ? 'השטח אבד!' : 'ההגנה החזיקה!', good: !ev.out.captured
             });
-          } else await G.sleep(involve ? 500 : 220);
+          } else if (this.rend.convoy) await this.rend.convoy(ev.from, ev.to, ev.sent, f.color, involve ? 0.85 : 0.5);
+          else await G.sleep(involve ? 500 : 220);
           this.afterCombat(ev.to, ev.out, fi);
           if (involve) G.ui.toast(ev.out.captured ? `${f.name} כבש את ${B.name}!` : `הדפת את ${f.name} ב${B.name}`, ev.out.captured ? 'bad' : 'good');
         }

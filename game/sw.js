@@ -1,7 +1,7 @@
 /* Neon Warfront – offline cache */
-const CACHE = 'neon-warfront-v1';
+const CACHE = 'neon-warfront-v2';
 const FILES = ['./', './index.html', './style.css', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
-  './js/util.js', './js/data.js', './js/mapgen.js', './js/render.js', './js/battle.js', './js/audio.js', './js/game.js', './js/ai.js', './js/ui.js', './js/main.js'];
+  './js/util.js', './js/data.js', './js/mapgen.js', './js/render.js', './js/battle.js', './js/audio.js', './js/game.js', './js/ai.js', './js/ui.js', './js/main.js', './js/render3d.js', './vendor/three.module.min.js', './vendor/addons/utils/BufferGeometryUtils.js', './vendor/addons/postprocessing/EffectComposer.js', './vendor/addons/postprocessing/RenderPass.js', './vendor/addons/postprocessing/UnrealBloomPass.js', './vendor/addons/postprocessing/OutputPass.js', './vendor/addons/postprocessing/ShaderPass.js', './vendor/addons/postprocessing/Pass.js', './vendor/addons/postprocessing/MaskPass.js', './vendor/addons/shaders/CopyShader.js', './vendor/addons/shaders/LuminosityHighPassShader.js', './vendor/addons/shaders/OutputShader.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

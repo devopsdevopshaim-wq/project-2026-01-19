@@ -7,7 +7,7 @@ G.meta = {
   load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) {}
-    const def = { tp: 0, research: {}, stars: {}, xp: 0, ach: {}, battles: 0, settings: { music: true, sfx: true, anim: 'mine', diff: 'normal' }, tut: false };
+    const def = { tp: 0, research: {}, stars: {}, xp: 0, ach: {}, battles: 0, settings: { music: true, sfx: true, anim: 'mine', diff: 'normal', gfx: 'high' }, tut: false };
     this.data = Object.assign(def, d || {});
     this.data.settings = Object.assign(def.settings, (d && d.settings) || {});
   },
