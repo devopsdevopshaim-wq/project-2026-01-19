@@ -10,6 +10,7 @@ G.ui = {
     $('#scr-' + name).classList.add('show');
     if (push && this.stack[this.stack.length - 1] !== name) this.stack.push(name);
     this.current = name;
+    if (G.sfx.scene) G.sfx.scene(name === 'game' ? 'game' : 'menu', G.ctl.m ? G.ctl.m.world : 0);
     $$('[data-tp]').forEach(e => e.innerHTML = `${G.svg('flask')} ${G.meta.data.tp} נק״מ`);
     if (name === 'title') { this.stack = ['title']; G.Title.refresh(); }
   },
@@ -180,6 +181,7 @@ G.ui = {
       <div class="setting"><span>איכות גרפיקה</span>${seg('gfx', [['high', 'גבוהה'], ['low', 'חסכונית']])}</div>
       <div class="setting"><span>אנימציית קרב</span>${seg('anim', [['all', 'הכל'], ['mine', 'שלי'], ['off', 'כבוי']])}</div>
       <div class="setting"><span>קושי ברירת מחדל</span>${seg('diff', [['easy', 'קל'], ['normal', 'רגיל'], ['hard', 'קשה']])}</div>
+      <p style="font-size:11.5px;margin-top:12px;line-height:1.5">קרדיטים: מודלים – Quaternius (CC0). מוזיקה – Komiku (CC0). קולות ואפקטים – Kenney (CC0), Meta Oculus Audio Pack (CC BY 4.0), PanderMusubi (CC0).</p>
       <div class="m-actions"><button class="btn danger" id="b-reset">אפס התקדמות</button><button class="btn primary" id="b-ok">סגור</button></div>`);
     card.querySelectorAll('.seg').forEach(sg => sg.querySelectorAll('button').forEach(b => b.onclick = () => {
       let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false;
@@ -587,6 +589,7 @@ G.ctl = {
     const r = this.rend;
     if (k === 'strike' || k === 'emp') {
       this.busy = true;
+      G.sfx.voice('fire_in_the_hole'); G.sfx.shot('jet'); await G.sleep(500);
       for (let i = 0; i < (k === 'emp' ? 1 : 6); i++) {
         const hx = G.map.hexes[T.hexes[Math.floor(Math.random() * T.hexes.length)]];
         r.boom(k === 'emp' ? T.cx : hx.x, k === 'emp' ? T.cy : hx.y * G.HEX.SQ - hx.h, k === 'emp' ? 3 : 1);
@@ -599,10 +602,10 @@ G.ctl = {
     } else if (k === 'reinf') {
       r.addFx({ type: 'ring', x: T.cx, y: T.cy, dur: 900, col: '#22d8ff', size: 70 });
       r.addFx({ type: 'text', x: T.cx, y: T.cy, dur: 1500, text: '+4 רגלים +טנק', col: '#3dfcff' });
-      G.sfx.buy();
+      G.sfx.buy(); G.sfx.voice('call_for_backup');
     } else {
       r.addFx({ type: 'ring', x: T.cx, y: T.cy, dur: 1000, col: '#7fe3ff', size: 80 });
-      G.sfx.capture();
+      G.sfx.shield();
     }
     this.deselect();
     this.ui.sel = tid; this.renderPanel();
@@ -705,6 +708,7 @@ G.ctl = {
       const A = G.map.terrs[from], B = G.map.terrs[to];
       this.rend.addFx({ type: 'arrow', from: [A.cx, A.cy], to: [B.cx, B.cy], col: '#3dfcff', dur: 800 });
       if (this.rend.convoy) this.rend.convoy(from, to, ch.sel, m.factions[0].color, 0.8);
+      G.sfx.voice('go_go_go');
       G.sfx.select();
       this.select(from); this.refreshHUD();
     };
@@ -815,6 +819,7 @@ G.ctl = {
           } else if (this.rend.convoy) await this.rend.convoy(ev.from, ev.to, ev.sent, f.color, involve ? 0.85 : 0.5);
           else await G.sleep(involve ? 500 : 220);
           this.afterCombat(ev.to, ev.out, fi);
+          if (involve && !(anim === 'all' && !ev.out.res.empty)) G.sfx.voice(ev.out.captured ? 'get_down' : 'look_out');
           if (involve) G.ui.toast(ev.out.captured ? `${f.name} כבש את ${B.name}!` : `הדפת את ${f.name} ב${B.name}`, ev.out.captured ? 'bad' : 'good');
         }
       });

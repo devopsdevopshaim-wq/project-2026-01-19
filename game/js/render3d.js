@@ -206,7 +206,8 @@ const UNIT_CFG = {
   jet:      { file: 'jet', size: 0.72, yaw: Math.PI / 2, tint: 0.4, air: 1.8, ring: 1.2 },
   mech:     { file: 'mech', size: 0.62, axis: 'h', yaw: -Math.PI / 2, tint: 0.35, anim: { idle: 'Idle', move: 'Walk', shoot: 'Shoot', die: 'Death' }, ring: 1.5 }
 };
-const SCENERY = ['palm1', 'palm2', 'pine1', 'pine2', 'tree1', 'tree2', 'cactus1', 'cactus2', 'deadtree', 'mountain1', 'mountain2', 'gold', 'ship', 'boat'];
+const BUILDINGS = ['b_building1_small', 'b_building2_large', 'b_building2_small', 'b_building3_big', 'b_building3_small', 'b_building4', 'b_house2', 'b_building1_large', 'b_house1', 'b_4story', 'b_6story_stack'];
+const SCENERY = ['palm1', 'palm2', 'pine1', 'pine2', 'tree1', 'tree2', 'cactus1', 'cactus2', 'deadtree', 'mountain1', 'mountain2', 'gold', 'ship', 'boat', 'b_antenna_1', ...BUILDINGS];
 const ASSETS = { ready: false, units: {}, scenery: {} };
 G.POSE = G.POSE || { axis: 'x', l: -1.2, r: -1.2 };
 function poseArms(root) {
@@ -233,7 +234,7 @@ function prepScenery(gltf) {
   const box = new THREE.Box3().setFromObject(sc), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
   const N = new THREE.Matrix4().makeScale(1 / size.y, 1 / size.y, 1 / size.y).multiply(new THREE.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z));
   const parts = [];
-  sc.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, m: N.clone().multiply(o.matrixWorld) }); });
+  sc.traverse(o => { if (o.isMesh) { if (!o.geometry.attributes.normal) { o.material.flatShading = true; o.material.needsUpdate = true; } parts.push({ geo: o.geometry, mat: o.material, m: N.clone().multiply(o.matrixWorld) }); } });
   return { parts, len: Math.max(size.x, size.z) / size.y };
 }
 const TINTS = {};
@@ -564,7 +565,7 @@ class Renderer3D {
     const dummy = new THREE.Object3D();
     if (this.featGroup) this.scene.remove(this.featGroup);
     const FG = this.featGroup = new THREE.Group(); this.scene.add(FG);
-    const lists = { tree: [], pine: [], palm: [], mount: [], snow: [], bld: [], neonTree: [], crater: [], crack: [] };
+    const lists = { tree: [], pine: [], palm: [], mount: [], snow: [], bld: [], neonTree: [], crater: [], crack: [], house: [] };
     for (const hx of map.hexes) {
       if (!hx.land) continue;
       const x = hx.x * S, z = hx.y * S, y = topY(hx);
@@ -584,6 +585,10 @@ class Renderer3D {
           if (wi === 2 || wi === 0 || hx.el > 0.7) lists.snow.push(p);
           if (wi === 3 && !i) lists.crater.push([p[0], y + 0.85 * s, p[2], s]);
         }
+      } else if (t === 'city' && ASSETS.ready && wi !== 4) {
+        const slots = [[-0.42, -0.22], [0.4, -0.25], [0.02, 0.38], [-0.05, -0.62]];
+        const n = 3 + (R() < 0.4 ? 1 : 0);
+        for (let i = 0; i < n; i++) lists.house.push([x + slots[i][0] + R.range(-0.08, 0.08), y, z + slots[i][1] + R.range(-0.06, 0.06), R.range(0.42, 0.62) * (i === 0 ? 1.2 : 1), Math.floor(R() * 4) * Math.PI / 2 + R.range(-0.15, 0.15)]);
       } else if (t === 'city') {
         const n = wi === 4 ? 6 : 4 + R.int(2);
         for (let i = 0; i < n; i++) {
@@ -633,6 +638,14 @@ class Renderer3D {
       else instModel(['tree1', 'tree2'], lists.tree, 0.55);
       const mt = ['#d6c7a8', '#c8743f', '#eef4ff', '#3a2c2c', '#8a8fc0'][wi];
       instModel(['mountain1', 'mountain2'], lists.mount, 1.05, mt, 0.55);
+      const bt = [null, '#e9cf9c', '#dfe8f5', '#5a4646', null][wi];
+      instModel(BUILDINGS.slice(0, 9), lists.house, 1, bt, wi === 3 ? 0.55 : 0.3);
+      if (wi === 4) { // megacity: real blocks among the neon towers + rooftop antennas
+        const extra = lists.bld.filter((_, i) => i % 3 === 0).map(p => [p[0], p[1], p[2], R.range(0.6, 0.95), Math.floor(R() * 4) * Math.PI / 2]);
+        instModel(['b_6story_stack', 'b_4story'], extra, 1, '#7a6cff', 0.45);
+        lists.bld = lists.bld.filter((_, i) => i % 3 !== 0);
+        instModel(['b_antenna_1'], lists.bld.filter(p => p[4] > 1).map(p => [p[0], p[1] + p[4], p[2], 0.35, 0]), 1, '#ff2d95', 0.6);
+      }
       lists.palm = []; lists.pine = []; lists.tree = []; lists.mount = []; lists.snow = [];
       if (wi === 3) lists.crater.forEach(c => c[1] += 0.15);
     }
@@ -1039,6 +1052,7 @@ class Renderer3D {
         const u = makeUnit(t, color);
         u.userData.off = new THREE.Vector3((i - 1) * 0.3, 0, (i % 2) * 0.3);
         u.userData.play && u.userData.play('move');
+        if (['tank', 'art', 'mech', 'aa'].includes(t)) G.sfx.engine();
         this.fxLayer.add(u); return u;
       });
       const ang = Math.atan2(-(b.z - a.z), b.x - a.x);
@@ -1098,6 +1112,10 @@ class Renderer3D {
         });
       };
       spawn(opts.att.units, 'A', opts.att.color);
+      const playerSide = G.match && opts.att.color === G.match.factions[0].color ? 'A' : 'D';
+      G.sfx.duck(true);
+      if (playerSide === 'A') { G.sfx.voice('go_go_go'); setTimeout(() => G.sfx.voice('target_engaged', true), 1500); }
+      else { G.sfx.voice('look_out'); setTimeout(() => G.sfx.voice('cover_me'), 1600); }
       spawn(opts.def.units, 'D', opts.def.color);
       // fortification walls
       const walls = [];
@@ -1123,7 +1141,7 @@ class Renderer3D {
         this.anims = this.anims.filter(a => a !== anim);
         this.hidden.delete(T);
         this.camTarget = { ...saveCam }; this.yaw = saveYaw;
-        ov.classList.remove('show'); document.body.classList.remove('cine'); banner.className = 'battle-banner';
+        ov.classList.remove('show'); document.body.classList.remove('cine'); G.sfx.duck(false); banner.className = 'battle-banner';
         document.getElementById('battle-skip').onclick = null;
         resolve();
       };
@@ -1158,7 +1176,8 @@ class Renderer3D {
               this.sprite(p0, { color: '#ffe9a8', size: heavy ? 0.45 : 0.22, life: 0.08 });
               a.position.addScaledVector(dir, a.userData.side === 'A' ? -0.02 : 0.02);
               if (a.userData.play && Math.random() < 0.3) { a.userData.play('shoot', true); setTimeout(() => a.userData.alive && a.userData.play('idle'), 700); }
-              if (Math.random() < 0.5) G.sfx.shot();
+              G.sfx.shot(ty);
+              if (ty === 'art' && Math.random() < 0.15) G.sfx.voice('fire_in_the_hole', a.userData.side !== playerSide);
             }
           }
           for (let i = shots.length - 1; i >= 0; i--) {
@@ -1191,6 +1210,7 @@ class Renderer3D {
                   else u.userData.animDeath = true;
                   const fr = u.getObjectByName('fring'); if (fr) fr.visible = false;
                   u.userData.dieT = t;
+                  if (u.userData.type === 'inf' || u.userData.type === 'commando') G.sfx.scream();
                 }
               }
             }
@@ -1205,7 +1225,7 @@ class Renderer3D {
           if (t > total + 0.3 && !ended) {
             ended = t;
             banner.textContent = opts.banner; banner.className = 'battle-banner show ' + (opts.good ? 'good' : 'bad');
-            opts.good ? G.sfx.win() : G.sfx.lose();
+            G.sfx.battleEnd(opts.good);
             if (opts.result.win) squad.filter(u => u.userData.alive && u.userData.side === 'A').forEach(u => u.userData.home = C.clone().add(u.position.clone().sub(C).multiplyScalar(0.5)).setY(u.position.y));
           }
           if (ended) for (const u of squad) if (u.userData.alive && u.userData.side === 'A' && opts.result.win) u.position.lerp(u.userData.home, dt * 2);

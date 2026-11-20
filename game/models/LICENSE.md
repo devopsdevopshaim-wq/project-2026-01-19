@@ -15,3 +15,5 @@ They were optimized for the web (quantized geometry, 512px WebP textures).
 | palm*, pine*, tree*, cactus*, deadtree | Ultimate Nature Pack |
 | mountain*, gold | Ultimate Fantasy RTS / RTS pack |
 | ship.glb, boat.glb | Ships Pack |
+| b_building*, b_house*, b_4story, b_6story_stack | Ultimate Buildings Pack / Buildings Pack (geometry simplified) |
+| b_antenna_1 | Cyberpunk Game Kit |
