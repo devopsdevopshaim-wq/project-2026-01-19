@@ -970,6 +970,7 @@ G.Title = {
     } else bc.hidden = true;
   },
   frame(now) {
+    if (G.title3D && G.title3D.ok) return G.title3D.frame(now);
     const cv = this.cv, ctx = this.ctx;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const W = cv.clientWidth, H = cv.clientHeight;

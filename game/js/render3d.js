@@ -155,6 +155,7 @@ const BUILD = {
     g.add(rotor);
     g.add(mesh(geo('hl', () => new THREE.SphereGeometry(0.025, 8, 6)), M.glow, -0.64, 0.18, 0));
     g.userData.air = 1.15;
+    g.scale.setScalar(0.62);
     return g;
   },
   jet(M) {
@@ -202,7 +203,7 @@ const UNIT_CFG = {
   tank:     { file: 'tank', size: 0.72, yaw: Math.PI, tint: 0.55, anim: { move: 'Tank_Forward' }, ring: 1.5 },
   art:      { file: 'art', size: 0.74, yaw: Math.PI, tint: 0.5, anim: { move: 'Tank_Forward' }, ring: 1.5 },
   aa:       { file: 'aa', size: 0.46, yaw: 0, tint: 0.45, ring: 1.2 },
-  heli:     { file: 'heli', size: 0.46, yaw: Math.PI / 2, tint: 0.45, air: 1.1, anim: { idle: 'Idle', shoot: 'Shoot', die: 'Dead' }, ring: 1 },
+  _drone:   { file: 'heli', size: 0.46, yaw: Math.PI / 2, tint: 0.45, air: 1.1, anim: { idle: 'Idle', shoot: 'Shoot', die: 'Dead' }, ring: 1 },
   jet:      { file: 'jet', size: 0.72, yaw: Math.PI / 2, tint: 0.4, air: 1.8, ring: 1.2 },
   mech:     { file: 'mech', size: 0.62, axis: 'h', yaw: -Math.PI / 2, tint: 0.35, anim: { idle: 'Idle', move: 'Walk', shoot: 'Shoot', die: 'Death' }, ring: 1.5 }
 };
@@ -370,8 +371,8 @@ class Renderer3D {
     this.garrison = {};
     this.hidden = new Set();
     this.anims = [];
-    this.quality = (G.meta && G.meta.data.settings.gfx) || 'high';
-    if (!this.snapshot) {
+    this.quality = (G.meta && G.meta.data && G.meta.data.settings.gfx) || 'high';
+    if (!this.snapshot && !opts.noOverlay) {
       this.ov = document.createElement('canvas');
       this.ov.id = 'map-ov';
       canvas.parentNode.insertBefore(this.ov, canvas.nextSibling);
