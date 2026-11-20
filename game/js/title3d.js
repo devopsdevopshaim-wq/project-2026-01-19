@@ -10,6 +10,13 @@ if (R3) {
 
   const T3 = G.title3D = {
     ok: false,
+    sleep() {   // leaving the title: release the GPU memory
+      if (!this.ok || !this.rend) return;
+      try { this.rend.scene = null; this.rend.renderer.dispose(); this.rend.renderer.forceContextLoss(); } catch (e) {}
+      G.renderers3D = G.renderers3D.filter(r => r !== this.rend);
+      this.cv.remove(); this.rend = null; this.ok = false; this.sleeping = true;
+    },
+    wake() { if (this.sleeping) { this.sleeping = false; try { this.init(); } catch (e) { const c = document.getElementById('title-cv'); if (c) c.style.display = ''; } } },
     init() {
       const host = document.getElementById('scr-title');
       const cv = document.createElement('canvas');
@@ -81,7 +88,7 @@ if (R3) {
         const to = b1.position.clone().add(V(rnd(-0.5, 0.5), 0, rnd(-0.5, 0.5)));
         if (kind === 'flak') { const j = this.jets[s === 0 ? 1 : 0]; to.copy(j.position).add(V(rnd(-0.4, 0.4), rnd(-0.2, 0.2), rnd(-0.4, 0.4))); }
         const from = a1.position.clone().add(V(0, 0.3, 0));
-        if (kind === 'bullet') for (let i = 0; i < 4; i++) setTimeout(() => r.fire({ from, to: to.clone().add(V(rnd(-0.1, 0.1), 0, rnd(-0.1, 0.1))), kind, tracer: i === 1, onHit: p => r.puff('smoke', p, { size: 0.06, grow: 2.5, life: 0.8, tint: r.dustColor(), op: 0.7, vel: V(0, 0.25, 0) }) }), i * 90);
+        if (kind === 'bullet') for (let i = 0; i < 4; i++) setTimeout(() => this.rend === r && r.fire({ from, to: to.clone().add(V(rnd(-0.1, 0.1), 0, rnd(-0.1, 0.1))), kind, tracer: i === 1, onHit: p => r.puff('smoke', p, { size: 0.06, grow: 2.5, life: 0.8, tint: r.dustColor(), op: 0.7, vel: V(0, 0.25, 0) }) }), i * 90);
         else r.fire({ from, to, kind, onHit: p => kind === 'flak' ? r.puff('smoke', p, { size: 0.18, grow: 1.6, life: 1.8, tint: 0x232323, op: 0.85 }) : r.dirtImpact(p, 0.55) });
         if (G.ui.current === 'title') G.sfx.shot(ty);
       }

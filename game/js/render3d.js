@@ -78,7 +78,7 @@ function mats(color) {
   });
 }
 const GEO = {};
-const geo = (k, f) => GEO[k] || (GEO[k] = f());
+const geo = (k, f) => GEO[k] || (GEO[k] = f ? f() : new THREE.BoxGeometry(0.05, 0.05, 0.05));
 function mesh(g, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
   const o = new THREE.Mesh(g, m);
   o.position.set(x, y, z); o.rotation.set(rx, ry, rz);
@@ -128,7 +128,7 @@ const BUILD = {
     const g = new THREE.Group();
     g.add(mesh(geo('truck', () => new THREE.BoxGeometry(0.5, 0.13, 0.28)), M.body, 0, 0.13, 0));
     g.add(mesh(geo('cab', () => new THREE.BoxGeometry(0.15, 0.13, 0.26)), M.glass, 0.2, 0.26, 0));
-    const w = geo('wheel');
+    const w = geo('wheel', () => new THREE.CylinderGeometry(0.075, 0.075, 0.05, 12));
     [[0.16, 0.16], [-0.16, 0.16], [0.16, -0.16], [-0.16, -0.16]].forEach(([x, z]) => g.add(mesh(w, M.dark, x, 0.075, z, Math.PI / 2)));
     const tur = new THREE.Group(); tur.position.set(-0.08, 0.22, 0); tur.name = 'turret';
     tur.add(mesh(geo('aat', () => new THREE.CylinderGeometry(0.09, 0.11, 0.08, 8)), M.dark, 0, 0.02, 0));
@@ -403,7 +403,8 @@ class Renderer3D {
   resize(w, h) {
     const r = this.cv.getBoundingClientRect();
     this.w = w || Math.max(1, r.width); this.h = h || Math.max(1, r.height);
-    const dpr = this.quality === 'high' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+    const small = Math.min(window.innerWidth, window.innerHeight) < 600;
+    const dpr = this.quality === 'high' ? Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2) : 1;
     this.dpr = dpr;
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(this.w, this.h, false);
@@ -1001,7 +1002,7 @@ class Renderer3D {
     if (f.type === 'text') { f.pos = this.from2D(f.x, f.y).add(new THREE.Vector3(0, 0.8, 0)); this.texts.push(f); return; }
     if (f.type === 'ring') {
       const pos = this.from2D(f.x, f.y);
-      const ring = new THREE.Mesh(geo('ring'), new THREE.MeshBasicMaterial({ map: TEX.ring, color: new THREE.Color(f.col).multiplyScalar(2.5), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+      const ring = new THREE.Mesh(geo('ring', () => new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2)), new THREE.MeshBasicMaterial({ map: TEX.ring, color: new THREE.Color(f.col).multiplyScalar(2.5), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
       ring.position.copy(pos);
       ring.userData = { ring: true, life: f.dur / 1000, t: 0, size: f.size * S * 2.6 };
       this.fxLayer.add(ring); this.particles.push(ring);

@@ -88,6 +88,7 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
 
   /* ---------- FX system ---------- */
   P.vfxInit = function () {
+    if (!this.scene) return;
     if (this.vfx && this.vfx.scene === this.scene) return;
     const N = 600;
     const pos = new Float32Array(N * 6), col = new Float32Array(N * 6);
@@ -101,6 +102,7 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
   P.dustColor = function () { return DUST[this.map ? this.map.wi : 0]; };
   P.puff = function (kind, at, o = {}) {
     this.vfxInit();
+    if (!this.vfx || !this.scene) return null;
     const low = this.quality === 'low';
     if (this.vfx.puffs.length > (low ? 110 : 280) || (low && kind === 'smoke' && Math.random() < 0.4)) return null;
     const m = puffMesh(kind);
@@ -276,6 +278,7 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
   const shellMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffb060').multiplyScalar(1.6), toneMapped: false });
   P.fire = function (o) {
     this.vfxInit();
+    if (!this.vfx || !this.scene) return;
     const from = o.from.clone(), to = o.to.clone();
     const dist = from.distanceTo(to);
     const dur = { bullet: 0.07 + dist * 0.02, shell: 0.1 + dist * 0.03, arty: 1.1, missile: 0.55 + dist * 0.08, flak: 0.22 }[o.kind];

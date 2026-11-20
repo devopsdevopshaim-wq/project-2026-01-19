@@ -12,7 +12,8 @@ G.ui = {
     this.current = name;
     if (G.sfx.scene) G.sfx.scene(name === 'game' ? 'game' : 'menu', G.ctl.m ? G.ctl.m.world : 0);
     $$('[data-tp]').forEach(e => e.innerHTML = `${G.svg('flask')} ${G.meta.data.tp} נק״מ`);
-    if (name === 'title') { this.stack = ['title']; G.Title.refresh(); }
+    if (name === 'title') { this.stack = ['title']; G.Title.refresh(); if (G.title3D) G.title3D.wake(); }
+    else if (G.title3D && G.title3D.ok) G.title3D.sleep();
   },
   back() {
     this.stack.pop();
@@ -213,6 +214,19 @@ G.ui = {
   }
 };
 
+G.thumbCache2 = {};
+G.thumbImg = function (name, cb) {
+  const c = G.thumbCache2[name];
+  if (c) return cb(c);
+  const img = new Image();
+  img.onload = () => { G.thumbCache2[name] = img; cb(img); };
+  img.src = 'thumbs/' + name + '.webp';
+};
+G.mapBounds = function (map) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const hx of map.hexes) if (hx.land) { x0 = Math.min(x0, hx.x); x1 = Math.max(x1, hx.x); z0 = Math.min(z0, hx.y); z1 = Math.max(z1, hx.y); }
+  return { x0, x1, z0, z1 };
+};
 G.parTurnsFor = (n, isAll) => Math.round(n * (isAll ? 0.5 : 0.9)) + 4;
 
 /* ---------- thumbnails ---------- */
@@ -221,9 +235,13 @@ G.thumbTerrain = wi => G.thumbCache[wi] || (G.thumbCache[wi] = G.drawTerrain(G.g
 G.drawThumb = function (cv, wi) {
   const w = G.WORLDS[wi], map = G.getMap(wi);
   const r = cv.getBoundingClientRect();
-  if (G.snapshot3D && r.width > 0) {
-    const img = G.snapshot3D(wi, Math.round(r.width), Math.round(r.height), 'persp');
-    cv.width = img.width; cv.height = img.height; cv.getContext('2d').drawImage(img, 0, 0);
+  if (G.has3D && r.width > 0) {
+    G.thumbImg('w' + wi, img => {
+      const dpr2 = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = r.width * dpr2; cv.height = r.height * dpr2;
+      const k = Math.max(cv.width / img.width, cv.height / img.height);
+      cv.getContext('2d').drawImage(img, (cv.width - img.width * k) / 2, (cv.height - img.height * k) / 2, img.width * k, img.height * k);
+    });
     return;
   }
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -242,7 +260,7 @@ G.drawThumb = function (cv, wi) {
 G.countryColors = ['#ff2d95', '#22d8ff', '#ffd23f', '#3dff8f', '#a66bff', '#ff8a3d'];
 G.drawCountryMap = function (wi, hi) {
   const cv = $('#country-cv'); if (!cv) return;
-  if (G.snapshot3D) return G.drawCountryMap3D(wi, hi);
+  if (G.has3D) return G.drawCountryMap3D(wi, hi);
   const map = G.getMap(wi), w = G.WORLDS[wi];
   const r = cv.getBoundingClientRect();
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -307,8 +325,9 @@ G.drawCountryMap3D = function (wi, hi) {
   const map = G.getMap(wi);
   const r = cv.getBoundingClientRect();
   if (!r.width) return;
-  const img = G.snapshot3D(wi, 900, Math.round(900 * 0.62), 'top');
-  const b = img.bounds, bx = b.x0 - 30, bz = b.z0 - 30, bw = b.x1 - b.x0 + 60, bh = b.z1 - b.z0 + 60;
+  const img = G.thumbCache2['top' + wi];
+  if (!img) { G.thumbImg('top' + wi, () => { if (G.ui.current === 'countries' && G.ui.world === wi) G.drawCountryMap3D(wi, hi); }); return; }
+  const b = G.mapBounds(map), bx = b.x0 - 30, bz = b.z0 - 30, bw = b.x1 - b.x0 + 60, bh = b.z1 - b.z0 + 60;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = r.width * dpr; cv.height = r.height * dpr;
   const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
@@ -744,6 +763,16 @@ G.ctl = {
   },
 
   async doAttack(from, to, sel) {
+    try { await this._doAttack(from, to, sel); }
+    catch (e) {
+      console.error('attack error', e);
+      document.getElementById('battle').classList.remove('show'); document.body.classList.remove('cine');
+      if (this.rend) { this.rend.cine = null; this.rend.cineOn = false; this.rend.ownerDirty = true; }
+      this.busy = false; this.refreshHUD();
+    }
+  },
+
+  async _doAttack(from, to, sel) {
     const m = this.m;
     const prevUnits = G.cloneU(m.terr[to].units), prev = m.terr[to].owner, fort = m.terr[to].fort;
     const out = G.act.attack(m, 0, from, to, sel);
@@ -785,6 +814,18 @@ G.ctl = {
   },
 
   async endTurn() {
+    try { await this._endTurn(); }
+    catch (e) {
+      console.error('turn error', e);
+      document.getElementById('battle').classList.remove('show'); document.body.classList.remove('cine');
+      if (this.rend) { this.rend.cine = null; this.rend.cineOn = false; }
+      this.turnOf = 0; $('#btn-end').disabled = false; this.busy = false;
+      const m = this.m;
+      if (m && !m.over) { m.turn++; G.startTurn(m, 0); G.saveMatch(m); this.refreshHUD(); }
+    }
+  },
+
+  async _endTurn() {
     const m = this.m;
     if (this.busy || !m || m.over || $('#modal').classList.contains('show')) return;
     this.busy = true;
