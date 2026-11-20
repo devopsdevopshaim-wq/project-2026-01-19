@@ -5,6 +5,8 @@ import { EffectComposer } from '../vendor/addons/postprocessing/EffectComposer.j
 import { RenderPass } from '../vendor/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from '../vendor/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from '../vendor/addons/postprocessing/OutputPass.js';
+import { GLTFLoader } from '../vendor/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from '../vendor/addons/utils/SkeletonUtils.js';
 
 const G = window.G;
 const S = 1 / 26;           // map px -> world units (hex radius = 1)
@@ -192,8 +194,112 @@ const BUILD = {
     return g;
   }
 };
+/* ---------------- CC0 glTF assets (Quaternius) ---------------- */
+// size = target length (or height for axis:'h') in world units; yaw turns the model to face +X
+const UNIT_CFG = {
+  inf:      { file: 'inf', size: 0.3, axis: 'h', yaw: -Math.PI / 2, tint: 0.2, pose: true, squad: [[0.02, 0], [-0.13, 0.14], [-0.13, -0.14]], ring: 1.1 },
+  commando: { file: 'commando', size: 0.33, axis: 'h', yaw: -Math.PI / 2, tint: 0.3, pose: true, squad: [[0.04, 0.08], [-0.1, -0.1]], ring: 1 },
+  tank:     { file: 'tank', size: 0.72, yaw: Math.PI, tint: 0.55, anim: { move: 'Tank_Forward' }, ring: 1.5 },
+  art:      { file: 'art', size: 0.74, yaw: Math.PI, tint: 0.5, anim: { move: 'Tank_Forward' }, ring: 1.5 },
+  aa:       { file: 'aa', size: 0.46, yaw: 0, tint: 0.45, ring: 1.2 },
+  heli:     { file: 'heli', size: 0.46, yaw: Math.PI / 2, tint: 0.45, air: 1.1, anim: { idle: 'Idle', shoot: 'Shoot', die: 'Dead' }, ring: 1 },
+  jet:      { file: 'jet', size: 0.72, yaw: Math.PI / 2, tint: 0.4, air: 1.8, ring: 1.2 },
+  mech:     { file: 'mech', size: 0.62, axis: 'h', yaw: -Math.PI / 2, tint: 0.35, anim: { idle: 'Idle', move: 'Walk', shoot: 'Shoot', die: 'Death' }, ring: 1.5 }
+};
+const SCENERY = ['palm1', 'palm2', 'pine1', 'pine2', 'tree1', 'tree2', 'cactus1', 'cactus2', 'deadtree', 'mountain1', 'mountain2', 'gold', 'ship', 'boat'];
+const ASSETS = { ready: false, units: {}, scenery: {} };
+G.POSE = G.POSE || { axis: 'x', l: -1.2, r: -1.2 };
+function poseArms(root) {
+  root.traverse(b => {
+    if (!b.isBone) return;
+    if (b.name === 'UpperArmL') b.rotation[G.POSE.axis] += G.POSE.l;
+    if (b.name === 'UpperArmR') b.rotation[G.POSE.axis] += G.POSE.r;
+  });
+}
+function prepUnit(k, gltf) {
+  const cfg = UNIT_CFG[k], inner = gltf.scene;
+  if (cfg.pose) poseArms(inner);
+  inner.rotation.y = cfg.yaw || 0;
+  inner.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(inner), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const sc = cfg.size / (cfg.axis === 'h' ? size.y : Math.max(size.x, size.z));
+  inner.scale.multiplyScalar(sc);
+  inner.position.set(-c.x * sc, -box.min.y * sc - (cfg.air ? size.y * sc * 0.5 : 0), -c.z * sc);
+  const wrap = new THREE.Group(); wrap.add(inner);
+  return { proto: wrap, anims: gltf.animations, cfg };
+}
+function prepScenery(gltf) {
+  const sc = gltf.scene; sc.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(sc), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const N = new THREE.Matrix4().makeScale(1 / size.y, 1 / size.y, 1 / size.y).multiply(new THREE.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z));
+  const parts = [];
+  sc.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, m: N.clone().multiply(o.matrixWorld) }); });
+  return { parts, len: Math.max(size.x, size.z) / size.y };
+}
+const TINTS = {};
+function tintMat(m, color, amt) {
+  const k = m.uuid + color + amt;
+  if (!TINTS[k]) { const t = m.clone(); t.color.lerp(new THREE.Color(color), amt); TINTS[k] = t; }
+  return TINTS[k];
+}
+G.assets3D = ASSETS;
+G.renderers3D = [];
+(async function loadAssets() {
+  try {
+    const ld = new GLTFLoader();
+    const base = new URL('../models/', import.meta.url).href;
+    await Promise.all([
+      ...Object.keys(UNIT_CFG).map(async k => { ASSETS.units[k] = prepUnit(k, await ld.loadAsync(base + UNIT_CFG[k].file + '.glb')); }),
+      ...SCENERY.map(async n => { ASSETS.scenery[n] = prepScenery(await ld.loadAsync(base + n + '.glb')); })
+    ]);
+    ASSETS.ready = true;
+    for (const k in PROTO) delete PROTO[k];
+    for (const k in snapCache) delete snapCache[k];
+    G.renderers3D.forEach(r => r.onAssets());
+    document.dispatchEvent(new Event('assets3d'));
+  } catch (e) { console.warn('3D assets unavailable, using built-in models', e); }
+})();
+
+function fromAsset(type, color) {
+  const A = ASSETS.units[type], cfg = A.cfg;
+  const root = new THREE.Group();
+  const mixers = [];
+  for (const [x, z] of (cfg.squad || [[0, 0]])) {
+    const o = SkeletonUtils.clone(A.proto);
+    o.position.set(x, 0, z);
+    if (cfg.squad) o.rotation.y = (Math.random() - 0.5) * 0.5;
+    o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.material = tintMat(m.material, color, cfg.tint); if (m.isSkinnedMesh) m.frustumCulled = false; } });
+    if (A.anims.length) mixers.push(new THREE.AnimationMixer(o));
+    root.add(o);
+  }
+  const ring = new THREE.Mesh(geo('fring', () => new THREE.RingGeometry(0.2, 0.25, 28).rotateX(-Math.PI / 2)), mats(color).glow);
+  ring.position.y = -(cfg.air || 0) + 0.025; ring.scale.setScalar(cfg.ring || 1); ring.name = 'fring';
+  root.add(ring);
+  const ud = root.userData = { type, ph: Math.random() * 10, air: cfg.air, mixers, cur: null };
+  ud.play = (key, once) => {
+    const name = cfg.anim && cfg.anim[key];
+    if (!name || !mixers.length) return false;
+    const clip = A.anims.find(a => a.name.includes(name));
+    if (!clip) return false;
+    for (const mx of mixers) {
+      const act = mx.clipAction(clip);
+      act.reset();
+      if (once) { act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = true; } else { act.setLoop(THREE.LoopRepeat); act.time = Math.random() * clip.duration; }
+      const prev = mx._cur;
+      act.play();
+      if (prev && prev !== act) act.crossFadeFrom(prev, 0.2, false);
+      mx._cur = act;
+    }
+    if (!once) ud.cur = key;
+    return true;
+  };
+  ud.play('idle');
+  return root;
+}
+
 const PROTO = {};
 function makeUnit(type, color) {
+  if (ASSETS.ready && ASSETS.units[type]) return fromAsset(type, color);
   const k = type + color;
   if (!PROTO[k]) PROTO[k] = BUILD[type](mats(color));
   const o = PROTO[k].clone();
@@ -272,6 +378,15 @@ class Renderer3D {
     }
     textures();
     this.resize();
+    G.renderers3D.push(this);
+  }
+
+  onAssets() {
+    if (!this.scene) return;
+    this.buildFeatures();
+    this.buildShips();
+    for (const t in this.garrison) this.unitLayer.remove(this.garrison[t].group);
+    this.garrison = {};
   }
 
   setQuality(q) {
@@ -379,6 +494,7 @@ class Renderer3D {
     this.buildFeatures();
     this.buildOverlays();
     this.buildAmbient();
+    this.buildShips();
     this.garrison = {}; this.hidden = new Set();
     this.unitLayer = new THREE.Group(); scene.add(this.unitLayer);
     this.fxLayer = new THREE.Group(); scene.add(this.fxLayer);
@@ -446,6 +562,8 @@ class Renderer3D {
   buildFeatures() {
     const map = this.map, th = this.theme, wi = map.wi, R = G.rng(map.seed + 11);
     const dummy = new THREE.Object3D();
+    if (this.featGroup) this.scene.remove(this.featGroup);
+    const FG = this.featGroup = new THREE.Group(); this.scene.add(FG);
     const lists = { tree: [], pine: [], palm: [], mount: [], snow: [], bld: [], neonTree: [], crater: [], crack: [] };
     for (const hx of map.hexes) {
       if (!hx.land) continue;
@@ -485,9 +603,39 @@ class Renderer3D {
       const im = new THREE.InstancedMesh(geometry, material, items.length);
       items.forEach((p, i) => { place(dummy, p, i); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); });
       im.castShadow = shadow; im.receiveShadow = true;
-      this.scene.add(im);
+      FG.add(im);
       return im;
     };
+    // instanced glTF scenery
+    const instModel = (names, items, height, tint, tintAmt = 0.6) => {
+      if (!items.length) return;
+      names.forEach((n, ni) => {
+        const A = ASSETS.scenery[n]; if (!A) return;
+        const mine = items.filter((_, i) => i % names.length === ni);
+        if (!mine.length) return;
+        for (const part of A.parts) {
+          const mat = tint ? tintMat(part.mat, tint, tintAmt) : part.mat;
+          const im = new THREE.InstancedMesh(part.geo, mat, mine.length);
+          mine.forEach((p, i) => {
+            dummy.position.set(p[0], p[1] - 0.02, p[2]); dummy.rotation.set(0, p[4] || 0, 0); dummy.scale.setScalar(height * p[3]); dummy.updateMatrix();
+            im.setMatrixAt(i, dummy.matrix.clone().multiply(part.m));
+          });
+          im.castShadow = true; im.receiveShadow = true;
+          FG.add(im);
+        }
+      });
+    };
+    if (ASSETS.ready) {
+      instModel(['palm1', 'palm2'], lists.palm, 0.62);
+      instModel(['pine1', 'pine2'], lists.pine, 0.6);
+      if (wi === 1) instModel(['cactus1', 'cactus2'], lists.tree, 0.36);
+      else if (wi === 3) instModel(['deadtree'], lists.tree, 0.5, '#2a1a14', 0.5);
+      else instModel(['tree1', 'tree2'], lists.tree, 0.55);
+      const mt = ['#d6c7a8', '#c8743f', '#eef4ff', '#3a2c2c', '#8a8fc0'][wi];
+      instModel(['mountain1', 'mountain2'], lists.mount, 1.05, mt, 0.55);
+      lists.palm = []; lists.pine = []; lists.tree = []; lists.mount = []; lists.snow = [];
+      if (wi === 3) lists.crater.forEach(c => c[1] += 0.15);
+    }
     const vc = (g, c) => { const n = g.attributes.position.count, a = new Float32Array(n * 3), cc = new THREE.Color(c); for (let i = 0; i < n; i++) { a[i * 3] = cc.r; a[i * 3 + 1] = cc.g; a[i * 3 + 2] = cc.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); if (g.index) g = g.toNonIndexed(); g.deleteAttribute('uv'); return g; };
     const std = (o = {}) => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, flatShading: true, ...o });
     const fc = th.terrain.forest;
@@ -572,8 +720,26 @@ class Renderer3D {
         const core = mesh(new THREE.SphereGeometry(0.1, 12, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color('#3dfcff').multiplyScalar(3), toneMapped: false }), 0, 0.3, 0);
         core.name = 'spin'; g.add(core);
       }
-      this.scene.add(g);
+      FG.add(g);
     }
+  }
+
+  buildShips() {
+    if (this.ships) this.ships.forEach(s => this.scene.remove(s));
+    this.ships = [];
+    if (!ASSETS.ready || this.theme.lavaSea) return;
+    const b = this.bounds, cx = (b.x0 + b.x1) / 2 * S, cz = (b.z0 + b.z1) / 2 * S;
+    const rx = (b.x1 - b.x0) / 2 * S + 2.2, rz = (b.z1 - b.z0) / 2 * S + 2;
+    const defs = [['ship', 1.5, 0.05], ['boat', 0.55, -0.09], ['boat', 0.5, 0.07]];
+    defs.forEach(([n, len, spd], i) => {
+      const A = ASSETS.scenery[n];
+      const g = new THREE.Group();
+      for (const part of A.parts) { const m = new THREE.Mesh(part.geo, part.mat); m.applyMatrix4(part.m); m.castShadow = true; g.add(m); }
+      const inner = new THREE.Group(); inner.add(g); inner.scale.setScalar(len / A.len);
+      const s = new THREE.Group(); s.add(inner);
+      s.userData = { a: i * 2.1 + 0.5, spd, rx: rx * (1 + i * 0.08), rz: rz * (1 + i * 0.1), cx, cz, n };
+      this.scene.add(s); this.ships.push(s);
+    });
   }
 
   buildOverlays() {
@@ -770,7 +936,7 @@ class Renderer3D {
       const slots = [[0.15, 0.1], [-0.45, 0.42], [-0.4, -0.45]];
       types.forEach((t, i) => {
         const u = makeUnit(t, color);
-        u.scale.multiplyScalar(1.35);
+        u.scale.multiplyScalar(ASSETS.ready ? 1.75 : 1.35);
         const [dx, dz] = slots[i];
         u.position.set(c.x + dx, c.y + (u.userData.air || 0), c.z + dz);
         u.rotation.y = Math.PI * 0.5 + (Math.random() - 0.5) * 0.6;
@@ -872,6 +1038,7 @@ class Renderer3D {
       const models = types.map((t, i) => {
         const u = makeUnit(t, color);
         u.userData.off = new THREE.Vector3((i - 1) * 0.3, 0, (i % 2) * 0.3);
+        u.userData.play && u.userData.play('move');
         this.fxLayer.add(u); return u;
       });
       const ang = Math.atan2(-(b.z - a.z), b.x - a.x);
@@ -926,6 +1093,7 @@ class Renderer3D {
           u.position.copy(start);
           u.rotation.y = Math.atan2(-(side === 'A' ? dir.z : -dir.z), side === 'A' ? dir.x : -dir.x);
           u.userData.side = side; u.userData.home = base; u.userData.start = start; u.userData.alive = true;
+          if (side === 'A' && u.userData.play) { u.userData.play('move'); setTimeout(() => u.userData.alive && u.userData.play('idle'), 1000); }
           this.fxLayer.add(u); squad.push(u);
         });
       };
@@ -989,6 +1157,7 @@ class Renderer3D {
               shots.push({ m: pm, p0, p1, t: 0, d: ty === 'art' ? 0.7 : heavy ? 0.3 : 0.18, arc: ty === 'art' ? 1.4 : 0, heavy, missile: ty === 'heli' || ty === 'jet' || ty === 'aa' });
               this.sprite(p0, { color: '#ffe9a8', size: heavy ? 0.45 : 0.22, life: 0.08 });
               a.position.addScaledVector(dir, a.userData.side === 'A' ? -0.02 : 0.02);
+              if (a.userData.play && Math.random() < 0.3) { a.userData.play('shoot', true); setTimeout(() => a.userData.alive && a.userData.play('idle'), 700); }
               if (Math.random() < 0.5) G.sfx.shot();
             }
           }
@@ -1018,7 +1187,9 @@ class Renderer3D {
                 while (list.length > want) {
                   const u = list.pop(); u.userData.alive = false;
                   this.explode(u.position.clone(), u.userData.air ? 1 : 0.85);
-                  u.traverse(o => { if (o.isMesh) o.material = mats('#000').burnt; });
+                  if (!(u.userData.play && u.userData.play('die', true))) u.traverse(o => { if (o.isMesh) o.material = mats('#000').burnt; });
+                  else u.userData.animDeath = true;
+                  const fr = u.getObjectByName('fring'); if (fr) fr.visible = false;
                   u.userData.dieT = t;
                 }
               }
@@ -1028,7 +1199,7 @@ class Renderer3D {
           for (const u of squad) if (!u.userData.alive && u.userData.dieT !== undefined) {
             const k2 = t - u.userData.dieT;
             if (u.userData.air) { u.position.y -= dt * 2.5; u.rotation.z += dt * 3; if (u.position.y < C.y) u.visible = false; }
-            else { u.rotation.z = Math.min(0.6, k2); u.position.y -= dt * 0.08; }
+            else if (!u.userData.animDeath) { u.rotation.z = Math.min(0.6, k2); u.position.y -= dt * 0.08; }
             if (Math.random() < 0.15) this.sprite(u.position.clone().add(new THREE.Vector3(0, 0.15, 0)), { smoke: true, color: '#222', size: 0.25, life: 1.4, grow: 2, op: 0.5, v: new THREE.Vector3(0, 0.6, 0) });
           }
           if (t > total + 0.3 && !ended) {
@@ -1065,8 +1236,18 @@ class Renderer3D {
       this.updateHighlights(match, ui, time);
     }
     // animate garrison units
+    for (const s of (this.ships || [])) {
+      const u = s.userData; u.a += u.spd * dt * 0.25;
+      const x = u.cx + Math.cos(u.a) * u.rx, z = u.cz + Math.sin(u.a) * u.rz;
+      const dx = -Math.sin(u.a) * u.rx * Math.sign(u.spd), dz = Math.cos(u.a) * u.rz * Math.sign(u.spd);
+      s.position.set(x, 0.02 + Math.sin(time * 1.6 + u.a * 5) * 0.015, z);
+      s.rotation.set(Math.sin(time * 1.3 + u.a) * 0.03, Math.atan2(dx, dz), 0);
+      if (Math.random() < 0.25) this.sprite(new THREE.Vector3(x, 0.04, z), { smoke: true, color: '#ffffff', size: u.n === 'ship' ? 0.3 : 0.15, life: 1.4, grow: 2.5, op: 0.45 });
+    }
+    for (const u of this.fxLayer.children) if (u.userData.mixers) u.userData.mixers.forEach(m => m.update(dt));
     for (const tid in this.garrison) for (const u of this.garrison[tid].group.children) {
       const ud = u.userData;
+      if (ud.mixers) ud.mixers.forEach(m => m.update(dt));
       const r = u.getObjectByName('rotor'); if (r) r.rotation.y += dt * 25;
       if (ud.air) {
         if (ud.type === 'jet') { const a = time * 0.7 + ud.ph; u.position.set(ud.base.x + Math.cos(a) * 0.55, ud.base.y + Math.sin(a * 2) * 0.05, ud.base.z + Math.sin(a) * 0.55); u.rotation.set(0, Math.atan2(-Math.cos(a), -Math.sin(a)), 0); u.rotateX(-0.45); }
@@ -1233,3 +1414,4 @@ function webglOK() {
 }
 if (webglOK()) { G.Renderer2D = G.Renderer; G.Renderer = Renderer3D; G.has3D = true; }
 G.THREE = THREE;
+G.__makeUnit = makeUnit;
