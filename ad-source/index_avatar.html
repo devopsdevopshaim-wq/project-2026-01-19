@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Stills Magnets Ad</title>
+<link rel="stylesheet" href="assets/fonts_local.css">
+<style>
+  :root{
+    --cream:#f8f2e9; --cream2:#efe3d1; --sand:#dcc7a9; --gold:#b8915f; --gold2:#d6b27a;
+    --brown:#5e4532; --brown2:#8a6a4f; --white:#fffdf9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:var(--cream)}
+  body{font-family:'Heebo',sans-serif;color:var(--brown)}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+  .scene{position:absolute;inset:0;overflow:hidden}
+  .bg{position:absolute;inset:0;background:
+      radial-gradient(1200px 900px at 50% 35%, #fffaf2 0%, var(--cream) 45%, var(--cream2) 100%);}
+  .grain{position:absolute;inset:0;opacity:.18;mix-blend-mode:multiply;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .4  0 0 0 0 .3  0 0 0 .35 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>")}
+  .deco{position:absolute;stroke:var(--sand);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  .center{position:absolute;left:0;right:0;text-align:center}
+  .script{font-family:'Great Vibes',cursive;color:var(--gold);direction:ltr}
+  .suez{font-family:'Suez One',serif}
+  .word{display:inline-block}
+  .balloon{position:absolute;border-radius:50%;
+      box-shadow: inset -18px -22px 40px rgba(120,90,60,.18), 0 20px 40px rgba(120,90,60,.12)}
+  .balloon::after{content:"";position:absolute;width:26%;height:18%;left:22%;top:16%;border-radius:50%;
+      background:rgba(255,255,255,.55);filter:blur(6px);transform:rotate(-30deg)}
+  #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50}
+
+  /* polaroid magnet */
+  .pol{position:absolute;width:380px;height:470px;background:var(--white);padding:22px 22px 0;
+      box-shadow:0 30px 60px rgba(90,60,30,.25), 0 4px 10px rgba(90,60,30,.15);border-radius:6px}
+  .pol .ph{width:100%;height:336px;background-image:url(assets/wall.jpg);background-size:1200px 1600px;border-radius:2px}
+  .pol .cap{font-family:'Great Vibes',cursive;color:var(--brown2);font-size:46px;text-align:center;margin-top:18px;direction:ltr}
+  .pin{position:absolute;top:-20px;left:50%;width:46px;height:46px;margin-left:-23px;border-radius:50%;
+      background:radial-gradient(circle at 35% 30%, #f3dcb0, var(--gold) 55%, #7d5c33);box-shadow:0 6px 12px rgba(0,0,0,.25)}
+
+  .stamp{position:absolute;width:330px;height:330px;border-radius:50%;
+      background:radial-gradient(circle at 40% 35%, #e7c890, var(--gold) 60%, #94703f);
+      color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+      box-shadow:0 25px 50px rgba(110,80,40,.35)}
+  .stamp::before{content:"";position:absolute;inset:14px;border:3px dashed rgba(255,255,255,.7);border-radius:50%}
+
+  .pill{display:inline-block;padding:18px 44px;border-radius:999px;font-weight:500;font-size:46px;
+      background:var(--white);color:var(--brown);box-shadow:0 12px 30px rgba(90,60,30,.18);margin:0 12px}
+
+  .vf{position:absolute;border-color:#fff;border-style:solid;width:110px;height:110px}
+  .hud{position:absolute;color:#fff;font-family:'Heebo';font-weight:500;font-size:34px;direction:ltr;letter-spacing:2px;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+
+  .row{display:flex;align-items:center;gap:30px;background:var(--white);border-radius:28px;padding:30px 44px;
+      margin:0 auto 34px;width:940px;box-shadow:0 14px 34px rgba(90,60,30,.15);font-size:48px;font-weight:500}
+  .check{flex:none;width:76px;height:76px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center}
+  .btn{display:inline-block;padding:34px 90px;border-radius:999px;font-family:'Suez One';font-size:64px;color:#fff;
+      background:linear-gradient(135deg,#c9a26b,#9c7646);box-shadow:0 22px 50px rgba(120,85,40,.4)}
+  .sparkle{position:absolute;width:40px;height:40px}
+
+  #avatar{position:absolute;right:30px;top:1590px;width:300px;height:300px;z-index:40}
+  #avatar svg{width:100%;height:100%;filter:drop-shadow(0 18px 30px rgba(80,55,30,.35))}
+  #bubble{position:absolute;left:40px;width:650px;top:1690px;min-height:150px;z-index:40;background:#fffdf9;border-radius:34px;
+     padding:26px 34px;font-size:40px;line-height:1.35;font-weight:500;color:#5e4532;box-shadow:0 16px 36px rgba(80,55,30,.25);
+     display:flex;align-items:center}
+  #bubble::after{content:"";position:absolute;right:-22px;top:56px;border:18px solid transparent;border-left:28px solid #fffdf9;border-right:0}
+  #bubble .w{display:inline-block;margin-left:10px;transition:none}
+  #s2bottom2,#s3sub,#s4sub2{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- ================= SCENE 1: INTRO ================= -->
+  <section class="scene" id="s1">
+    <div class="bg"></div><div class="grain"></div>
+    <svg class="deco" id="s1cloudA" style="left:90px;top:260px" width="260" height="120" viewBox="0 0 260 120"><path d="M20 95 Q10 60 50 60 Q55 20 100 30 Q130 0 165 30 Q215 20 215 65 Q250 70 240 95 Z"/></svg>
+    <svg class="deco" id="s1cloudB" style="right:70px;top:420px" width="220" height="100" viewBox="0 0 260 120"><path d="M20 95 Q10 60 50 60 Q55 20 100 30 Q130 0 165 30 Q215 20 215 65 Q250 70 240 95 Z"/></svg>
+    <div id="s1balloons"></div>
+    <div class="center script" id="s1script" style="top:560px;font-size:120px">Stills &amp; Magnets</div>
+    <div class="center suez" style="top:720px;font-size:170px;line-height:1.05">
+      <span class="word" id="s1w1">חבילת</span>
+    </div>
+    <div class="center suez" style="top:900px;font-size:150px;line-height:1.05;color:var(--brown2)">
+      <span class="word" id="s1w2">סטילס</span>
+      <span class="word" id="s1w3" style="color:var(--gold)">+</span>
+      <span class="word" id="s1w4">מגנטים</span>
+    </div>
+    <div id="s1line" style="position:absolute;top:1120px;left:340px;width:400px;height:4px;background:var(--gold);border-radius:4px"></div>
+    <div class="center" id="s1tag" style="top:1170px;font-size:60px;font-weight:300">רגעים שנשארים... <b style="font-weight:800">גם על המקרר</b></div>
+  </section>
+
+  <!-- ================= SCENE 2: MAGNETS ================= -->
+  <section class="scene" id="s2">
+    <div class="bg" style="background:radial-gradient(1200px 1000px at 50% 50%, #fbf6ee, #ead9c0)"></div><div class="grain"></div>
+    <div class="center" id="s2kicker" style="top:150px;font-size:56px;font-weight:500;color:var(--gold);letter-spacing:4px">מגנטים לאירוע</div>
+    <div class="center suez" style="top:230px;font-size:118px;line-height:1.1">
+      <span class="word" id="s2w1">טריים</span> <span class="word" id="s2w2">ואיכותיים</span>
+    </div>
+    <div class="pol" id="pol1" style="left:80px;top:640px"><div class="pin"></div><div class="ph" style="background-position:-500px -560px"></div><div class="cap">Welcome</div></div>
+    <div class="pol" id="pol2" style="left:350px;top:600px;z-index:2"><div class="pin"></div><div class="ph" style="background-position:-440px -740px"></div><div class="cap">Baby Boy</div></div>
+    <div class="pol" id="pol3" style="left:620px;top:660px"><div class="pin"></div><div class="ph" style="background-position:-180px -760px"></div><div class="cap">Sweet</div></div>
+    <div class="stamp" id="s2stamp" style="left:375px;top:1170px;z-index:5">
+      <div class="suez" style="font-size:78px;line-height:1">ללא</div>
+      <div class="suez" style="font-size:78px;line-height:1">הגבלה!</div>
+    </div>
+    <div class="center" id="s2bottom" style="top:1555px;right:330px;font-size:66px;font-weight:300">לאורך <b style="font-weight:800">כל האירוע</b></div>
+    <div class="center" id="s2bottom2" style="top:1680px;font-size:44px;color:var(--brown2)">מודפסים במקום · מוכנים תוך דקות</div>
+  </section>
+
+  <!-- ================= SCENE 3: STILLS ================= -->
+  <section class="scene" id="s3" style="background:#1d1611">
+    <div id="s3photo" style="position:absolute;inset:0;background:url(assets/wall.jpg) center/cover"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(20,14,10,.35), rgba(20,14,10,0) 30%, rgba(20,14,10,0) 50%, rgba(30,20,12,.85) 78%)"></div>
+    <div class="vf" style="left:70px;top:120px;border-width:6px 0 0 6px"></div>
+    <div class="vf" style="right:70px;top:120px;border-width:6px 6px 0 0"></div>
+    <div class="vf" style="left:70px;top:1050px;border-width:0 0 6px 6px"></div>
+    <div class="vf" style="right:70px;top:1050px;border-width:0 6px 6px 0"></div>
+    <div id="s3focus" style="position:absolute;left:420px;top:560px;width:240px;height:180px;border:4px solid #fff;border-radius:6px"></div>
+    <div class="hud" style="left:110px;top:150px"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#e8b86a;margin-right:12px;vertical-align:middle" id="s3dot"></span>PHOTO</div>
+    <div class="hud" style="right:110px;top:150px" id="s3count">001</div>
+    <div class="hud" style="left:0;right:0;text-align:center;top:1080px;font-size:30px;opacity:.9">ISO 400 &nbsp;&nbsp; f/2.8 &nbsp;&nbsp; 1/160</div>
+    <div id="s3shutterT" style="position:absolute;left:0;right:0;top:0;height:0;background:#000;z-index:10"></div>
+    <div id="s3shutterB" style="position:absolute;left:0;right:0;bottom:0;height:0;background:#000;z-index:10"></div>
+    <div class="center suez" style="top:1265px;font-size:140px;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.4)"><span class="word" id="s3t1">צילומי</span> <span class="word" id="s3t2" style="color:#f0d3a0">סטילס</span></div>
+    <div class="center" style="top:1478px">
+      <span class="pill" id="s3p1">צילומי יום</span><span class="pill" id="s3p2">צילומים ספונטניים</span>
+    </div>
+    <div class="center" id="s3sub" style="top:1690px;font-size:44px;color:#f3e6d2;font-weight:300">כל רגע, כל חיוך, כל דמעה</div>
+  </section>
+
+  <!-- ================= SCENE 4: PHOTO WALL ================= -->
+  <section class="scene" id="s4">
+    <div class="bg" style="background:radial-gradient(1200px 1000px at 50% 40%, #fffaf2, #ecdcc4)"></div><div class="grain"></div>
+    <div class="center" id="s4kicker" style="top:110px;font-size:54px;font-weight:500;color:var(--gold);letter-spacing:3px">תוספת מושלמת</div>
+    <div class="center suez" style="top:180px;font-size:120px"><span class="word" id="s4t1" style="color:var(--gold)">+</span> <span class="word" id="s4t2">קיר</span> <span class="word" id="s4t3">צילום</span></div>
+    <div id="s4frame" style="position:absolute;left:150px;top:390px;width:780px;height:1040px;padding:18px;background:var(--white);border-radius:18px;box-shadow:0 40px 80px rgba(90,60,30,.3)">
+      <div style="width:100%;height:100%;overflow:hidden;border-radius:10px">
+        <div id="s4img" style="width:100%;height:100%;background:url(assets/wall.jpg) center/cover"></div>
+      </div>
+    </div>
+    <svg class="sparkle" id="sp1" style="left:110px;top:420px" viewBox="0 0 40 40"><path d="M20 0 L24 16 L40 20 L24 24 L20 40 L16 24 L0 20 L16 16Z" fill="#d6b27a"/></svg>
+    <svg class="sparkle" id="sp2" style="left:920px;top:780px;width:56px;height:56px" viewBox="0 0 40 40"><path d="M20 0 L24 16 L40 20 L24 24 L20 40 L16 24 L0 20 L16 16Z" fill="#d6b27a"/></svg>
+    <svg class="sparkle" id="sp3" style="left:120px;top:1300px;width:30px;height:30px" viewBox="0 0 40 40"><path d="M20 0 L24 16 L40 20 L24 24 L20 40 L16 24 L0 20 L16 16Z" fill="#d6b27a"/></svg>
+    <div id="s4ribbon" style="position:absolute;left:90px;right:90px;top:1360px;height:190px;border-radius:24px;
+        background:linear-gradient(135deg,#c9a26b,#9c7646);box-shadow:0 26px 50px rgba(110,80,40,.4);
+        display:flex;align-items:center;justify-content:center;color:#fff">
+      <span class="suez" style="font-size:96px">במחיר לכל כיס</span>
+    </div>
+    <div class="center" id="s4sub" style="top:1600px;right:330px;font-size:44px;font-weight:300">מעוצב <b style="font-weight:800">בהתאמה אישית</b> לאירוע שלכם</div>
+    <div class="center" id="s4sub2" style="top:1710px;font-size:42px;color:var(--brown2)">ברית · בר/בת מצווה · חתונה · יום הולדת</div>
+  </section>
+
+  <!-- ================= SCENE 5: CTA ================= -->
+  <section class="scene" id="s5">
+    <div class="bg"></div><div class="grain"></div>
+    <div id="s5balloons"></div>
+    <div class="center script" id="s5script" style="top:250px;font-size:110px">All in one</div>
+    <div class="center suez" id="s5title" style="top:400px;font-size:120px">הכל בחבילה אחת</div>
+    <div style="position:absolute;top:660px;left:0;right:0">
+      <div class="row" id="r1"><div class="check"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>מגנטים איכותיים ללא הגבלה</div>
+      <div class="row" id="r2"><div class="check"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>צילומי סטילס – יום וספונטני</div>
+      <div class="row" id="r3"><div class="check"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>קיר צילום מעוצב – במחיר לכל כיס</div>
+    </div>
+    <div class="center" style="top:1330px"><span class="btn" id="s5btn">שריינו תאריך עכשיו</span></div>
+    <div class="center" id="s5sub" style="top:1495px;font-size:50px;font-weight:300">לפרטים והזמנות – <b style="font-weight:800">שלחו הודעה</b></div>
+  </section>
+
+
+  <div id="avatar"><svg viewBox="0 0 300 300">
+    <defs>
+      <radialGradient id="abg" cx="40%" cy="35%"><stop offset="0" stop-color="#f3e2c4"/><stop offset="1" stop-color="#d7b885"/></radialGradient>
+      <clipPath id="aclip"><circle cx="150" cy="150" r="142"/></clipPath>
+    </defs>
+    <circle cx="150" cy="150" r="148" fill="#fffdf9"/>
+    <g clip-path="url(#aclip)">
+      <rect width="300" height="300" fill="url(#abg)"/>
+      <g id="aBody">
+        <path d="M78 205 Q70 110 150 60 Q232 110 222 205 L232 270 L68 270Z" fill="#4a3226"/>
+        <rect x="136" y="190" width="28" height="44" fill="#e9b994"/>
+        <path d="M40 310 Q48 238 112 226 Q150 250 188 226 Q252 238 260 310Z" fill="#fffaf2"/>
+        <path d="M112 226 Q150 262 188 226" fill="none" stroke="#c9a26b" stroke-width="5"/>
+        <circle cx="150" cy="252" r="6" fill="#c9a26b"/>
+        <g id="aArm">
+          <path d="M226 300 Q236 250 246 205" stroke="#fffaf2" stroke-width="30" stroke-linecap="round" fill="none"/>
+          <path d="M246 214 L248 196" stroke="#e9b994" stroke-width="22" stroke-linecap="round"/>
+          <ellipse cx="249" cy="182" rx="17" ry="20" fill="#f1c7a5"/>
+          <path d="M238 170 v-14 M245 166 v-18 M252 166 v-17 M259 170 v-13" stroke="#f1c7a5" stroke-width="7" stroke-linecap="round"/>
+        </g>
+        <g id="aHead">
+          <ellipse cx="150" cy="138" rx="58" ry="68" fill="#f1c7a5"/>
+          <circle cx="93" cy="160" r="6" fill="#d6b27a"/><circle cx="207" cy="160" r="6" fill="#d6b27a"/>
+          <ellipse cx="91" cy="140" rx="9" ry="14" fill="#e9b994"/><ellipse cx="209" cy="140" rx="9" ry="14" fill="#e9b994"/>
+          <path d="M90 130 Q92 66 150 64 Q210 66 210 130 Q196 92 160 88 Q130 104 96 112Z" fill="#4a3226"/>
+          <circle cx="122" cy="160" r="11" fill="#f19a8a" opacity=".35"/><circle cx="178" cy="160" r="11" fill="#f19a8a" opacity=".35"/>
+          <g id="aBrows" stroke="#4a3226" stroke-width="4.5" stroke-linecap="round" fill="none">
+            <path d="M114 118 Q126 111 138 116"/><path d="M162 116 Q174 111 186 118"/>
+          </g>
+          <g id="aEyes">
+            <g id="aEyeL" style="transform-origin:127px 136px"><ellipse cx="127" cy="136" rx="11" ry="8.5" fill="#fff"/><circle cx="127" cy="137" r="6.5" fill="#3b271c"/><circle cx="129.5" cy="134.5" r="2" fill="#fff"/><path d="M115 132 Q127 124 139 132" stroke="#3b271c" stroke-width="3" fill="none"/></g>
+            <g id="aEyeR" style="transform-origin:173px 136px"><ellipse cx="173" cy="136" rx="11" ry="8.5" fill="#fff"/><circle cx="173" cy="137" r="6.5" fill="#3b271c"/><circle cx="175.5" cy="134.5" r="2" fill="#fff"/><path d="M161 132 Q173 124 185 132" stroke="#3b271c" stroke-width="3" fill="none"/></g>
+          </g>
+          <path d="M150 142 Q146 156 151 158" stroke="#d49b7a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <g id="aMouth">
+            <path class="m" data-m="0" d="M134 174 Q150 188 166 174" stroke="#a3473f" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <g class="m" data-m="1"><path d="M138 173 Q150 170 162 173 Q150 186 138 173Z" fill="#8e3a34"/></g>
+            <g class="m" data-m="2"><path d="M135 171 Q150 167 165 171 Q150 196 135 171Z" fill="#8e3a34"/><path d="M139 172 Q150 170 161 172 L160 176 Q150 175 140 176Z" fill="#fff"/><ellipse cx="150" cy="186" rx="7" ry="3.5" fill="#d9706a"/></g>
+            <g class="m" data-m="3"><ellipse cx="150" cy="178" rx="7.5" ry="9.5" fill="#8e3a34"/></g>
+            <g class="m" data-m="4"><path d="M131 170 Q150 174 169 170 Q150 196 131 170Z" fill="#8e3a34"/><path d="M134 171 Q150 175 166 171 L164 176 Q150 179 136 176Z" fill="#fff"/></g>
+          </g>
+        </g>
+      </g>
+    </g>
+    <circle cx="150" cy="150" r="144" fill="none" stroke="#c9a26b" stroke-width="6"/>
+  </svg></div>
+  <div id="bubble"><div id="btext"></div></div>
+  <div id="flash"></div>
+</div>
+
+<script src="assets/gsap.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const W = 1080, H = 1920;
+const T = {s1:0, s2:4.2, s3:9.6, s4:15.0, s5:20.8, end:26.5};
+
+/* ---------- balloons (procedural, deterministic) ---------- */
+const COLORS = ['#efe5d6','#fbf8f3','#e3d3bb','#f5eee3','#d9c6aa'];
+function rnd(i){ const x = Math.sin(i*127.1+311.7)*43758.5453; return x-Math.floor(x); }
+function makeBalloons(host, n, seed, mode){
+  const arr=[];
+  for(let i=0;i<n;i++){
+    const r = rnd(seed+i);
+    const size = 70 + rnd(seed+i*3.3)*130;
+    const el = document.createElement('div'); el.className='balloon';
+    const c = COLORS[Math.floor(rnd(seed+i*7.1)*COLORS.length)];
+    el.style.cssText += `width:${size}px;height:${size}px;background:radial-gradient(circle at 35% 30%, #fff 0%, ${c} 45%, ${c} 100%);`;
+    host.appendChild(el);
+    let x;
+    if(mode==='sides'){ const left = i%2===0; x = left ? -40 + rnd(seed+i*5)*230 : W-190 + rnd(seed+i*5)*230 - size/2; }
+    else x = rnd(seed+i*5)*W - size/2;
+    arr.push({el,size,x,speed:60+rnd(seed+i*9)*90,phase:rnd(seed+i*2)*6.28,start:rnd(seed+i*11)*H});
+  }
+  return arr;
+}
+const b1 = makeBalloons($('#s1balloons'), 16, 1, 'free');
+const b5 = makeBalloons($('#s5balloons'), 26, 50, 'sides');
+function updBalloons(arr, t, rise){
+  for(const b of arr){
+    let y = (b.start + H + 200 - t*b.speed*rise) % (H+400) - 200;
+    const x = b.x + Math.sin(t*1.2+b.phase)*18;
+    b.el.style.transform = `translate(${x}px,${y}px) rotate(${Math.sin(t+b.phase)*6}deg)`;
+  }
+}
+
+/* ---------- timeline ---------- */
+gsap.defaults({ease:'power3.out'});
+const tl = gsap.timeline({paused:true});
+
+// scene visibility
+gsap.set(['#s2','#s3','#s4','#s5'],{autoAlpha:0});
+
+// S1 ---------------------------------------
+tl.set('#flash',{opacity:1},0).to('#flash',{opacity:0,duration:.6,ease:'power2.out'},0.05);
+tl.from('#s1balloons',{opacity:0,duration:1},0);
+tl.from('#s1cloudA',{x:-120,opacity:0,duration:1.6},0.1).from('#s1cloudB',{x:120,opacity:0,duration:1.6},0.2);
+tl.from('#s1script',{opacity:0,y:40,scale:.9,duration:1},0.35);
+tl.from('#s1w1',{y:120,opacity:0,rotateX:-80,duration:.8,ease:'back.out(1.6)'},0.6);
+tl.from(['#s1w4','#s1w3','#s1w2'],{y:120,opacity:0,duration:.7,stagger:.15,ease:'back.out(1.6)'},0.95);
+tl.from('#s1line',{scaleX:0,duration:.7},1.5);
+tl.from('#s1tag',{opacity:0,y:30,duration:.8},1.7);
+tl.to('#s1script',{y:-10,duration:2.5,ease:'sine.inOut'},1.5);
+
+// transition S1 -> S2 : circle reveal
+tl.set('#s2',{autoAlpha:1,clipPath:'circle(0% at 50% 50%)'},T.s2-0.6);
+tl.to('#s2',{clipPath:'circle(75% at 50% 50%)',duration:.9,ease:'power2.inOut'},T.s2-0.6);
+tl.to('#s1',{scale:1.12,duration:.9,ease:'power2.in'},T.s2-0.6);
+tl.set('#s1',{autoAlpha:0},T.s2+0.4);
+
+// S2 ---------------------------------------
+let t2 = T.s2-0.2;
+tl.from('#s2kicker',{opacity:0,y:-30,duration:.6},t2);
+tl.from(['#s2w2','#s2w1'],{opacity:0,y:80,duration:.7,stagger:.15,ease:'back.out(1.7)'},t2+.15);
+tl.fromTo('#pol1',{y:-1100,rotation:-30},{y:0,rotation:-11,duration:1,ease:'bounce.out'},t2+.5);
+tl.fromTo('#pol3',{y:-1100,rotation:30},{y:0,rotation:10,duration:1,ease:'bounce.out'},t2+.75);
+tl.fromTo('#pol2',{y:-1100,rotation:5},{y:0,rotation:-2,duration:1,ease:'bounce.out'},t2+1.0);
+tl.fromTo('#s2stamp',{scale:3.2,opacity:0,rotation:-40},{scale:1,opacity:1,rotation:-10,duration:.55,ease:'power4.in'},t2+1.9);
+tl.to('#stage',{x:12,duration:.05,yoyo:true,repeat:5,ease:'none'},t2+2.45);
+tl.to('#s2stamp',{scale:1.08,duration:.4,yoyo:true,repeat:5,ease:'sine.inOut'},t2+2.7);
+tl.from('#s2bottom',{opacity:0,y:40,duration:.7},t2+2.6);
+tl.from('#s2bottom2',{opacity:0,y:30,duration:.7},t2+2.9);
+tl.to(['#pol1','#pol3'],{y:-14,duration:1.5,yoyo:true,repeat:1,ease:'sine.inOut'},t2+1.8);
+
+// transition S2 -> S3 : camera flash
+tl.to('#flash',{opacity:1,duration:.18,ease:'power1.in'},T.s3-0.18);
+tl.set('#s2',{autoAlpha:0},T.s3);
+tl.set('#s3',{autoAlpha:1},T.s3);
+tl.to('#flash',{opacity:0,duration:.6,ease:'power2.out'},T.s3);
+
+// S3 ---------------------------------------
+const t3 = T.s3;
+// shot 1 : elephant + welcome
+tl.set('#s3photo',{backgroundSize:'2400px auto',backgroundPosition:'-750px -1000px'},t3);
+tl.to('#s3photo',{backgroundPosition:'-800px -1040px',duration:1.6,ease:'none'},t3);
+tl.fromTo('#s3focus',{scale:1.6,opacity:0},{scale:1,opacity:1,duration:.45,ease:'power2.out'},t3+.4);
+tl.to('#s3focus',{borderColor:'#f0d3a0',duration:.1},t3+.85);
+function shutter(at, nextPos, nextSize, count){
+  tl.to(['#s3shutterT','#s3shutterB'],{height:960,duration:.12,ease:'power2.in'},at);
+  tl.set('#s3photo',{backgroundSize:nextSize,backgroundPosition:nextPos},at+.12);
+    tl.set('#s3focus',{borderColor:'#fff',scale:1.5,opacity:0},at+.12);
+  tl.to(['#s3shutterT','#s3shutterB'],{height:0,duration:.18,ease:'power2.out'},at+.16);
+  tl.fromTo('#flash',{opacity:.7},{opacity:0,duration:.35},at+.16);
+}
+shutter(t3+1.3,'-250px -1100px','2200px auto','002'); // giraffe / BABY
+tl.to('#s3photo',{backgroundPosition:'-300px -1140px',duration:1.4,ease:'none'},t3+1.45);
+tl.to('#s3focus',{scale:1,opacity:1,duration:.4},t3+1.6);
+tl.to('#s3focus',{borderColor:'#f0d3a0',duration:.1},t3+2.0);
+shutter(t3+2.6,'center center','cover','003');
+tl.fromTo('#s3photo',{scale:1.15},{scale:1,duration:2.6,ease:'power1.out'},t3+2.75);
+tl.to('#s3focus',{scale:1,opacity:1,duration:.4},t3+2.9);
+tl.to('#s3dot',{opacity:.2,duration:.3,yoyo:true,repeat:9,ease:'none'},t3);
+tl.from(['#s3t2','#s3t1'],{opacity:0,y:90,duration:.7,stagger:.15,ease:'back.out(1.6)'},t3+.5);
+tl.from(['#s3p1','#s3p2'],{opacity:0,scale:.4,duration:.55,stagger:.25,ease:'back.out(2)'},t3+1.2);
+tl.from('#s3sub',{opacity:0,y:30,duration:.7},t3+2.0);
+
+// transition S3 -> S4 : slide up wipe
+tl.set('#s4',{autoAlpha:1,clipPath:'inset(100% 0 0 0)'},T.s4-0.7);
+tl.to('#s4',{clipPath:'inset(0% 0 0 0)',duration:.8,ease:'power3.inOut'},T.s4-0.7);
+tl.to('#s3',{y:-300,duration:.8,ease:'power3.inOut'},T.s4-0.7);
+tl.set('#s3',{autoAlpha:0},T.s4+0.2);
+
+// S4 ---------------------------------------
+const t4 = T.s4-0.3;
+tl.from('#s4kicker',{opacity:0,y:-30,duration:.6},t4);
+tl.from(['#s4t3','#s4t2','#s4t1'],{opacity:0,y:80,duration:.6,stagger:.12,ease:'back.out(1.8)'},t4+.15);
+tl.from('#s4frame',{y:300,opacity:0,rotation:4,scale:.85,duration:1.1,ease:'power3.out'},t4+.3);
+tl.fromTo('#s4img',{scale:1.35,transformOrigin:'50% 60%'},{scale:1,duration:5.5,ease:'power1.out'},t4+.3);
+tl.fromTo('#s4ribbon',{scale:2.5,opacity:0,rotation:-8},{scale:1,opacity:1,rotation:-3,duration:.5,ease:'power4.in'},t4+1.9);
+tl.to('#stage',{y:10,duration:.05,yoyo:true,repeat:5,ease:'none'},t4+2.4);
+tl.to('#s4ribbon',{scale:1.05,duration:.45,yoyo:true,repeat:5,ease:'sine.inOut'},t4+2.7);
+tl.from('#s4sub',{opacity:0,y:30,duration:.7},t4+2.6);
+tl.from('#s4sub2',{opacity:0,y:30,duration:.7},t4+3.0);
+['#sp1','#sp2','#sp3'].forEach((s,i)=>{
+  tl.fromTo(s,{scale:0,rotation:0},{scale:1.2,rotation:180,duration:.7,ease:'back.out(2)',yoyo:true,repeat:3},t4+1.2+i*.4);
+});
+
+// transition S4 -> S5 : diagonal wipe
+tl.set('#s5',{autoAlpha:1,clipPath:'polygon(0 0, 0 0, 0 0, 0 0)'},T.s5-0.7);
+tl.to('#s5',{clipPath:'polygon(0 0, 200% 0, 0 200%, 0 0)',duration:.9,ease:'power2.inOut'},T.s5-0.7);
+tl.set('#s4',{autoAlpha:0},T.s5+0.3);
+
+// S5 ---------------------------------------
+const t5 = T.s5-0.3;
+tl.from('#s5script',{opacity:0,scale:.8,duration:.8},t5);
+tl.from('#s5title',{opacity:0,y:60,duration:.7,ease:'back.out(1.6)'},t5+.2);
+tl.from(['#r1','#r2','#r3'],{opacity:0,x:-400,duration:.6,stagger:.3,ease:'back.out(1.4)'},t5+.6);
+tl.from(['#r1 .check','#r2 .check','#r3 .check'],{scale:0,duration:.4,stagger:.3,ease:'back.out(3)'},t5+.9);
+tl.from('#s5btn',{opacity:0,scale:.5,duration:.6,ease:'back.out(2)'},t5+1.8);
+tl.to('#s5btn',{scale:1.07,duration:.45,yoyo:true,repeat:7,ease:'sine.inOut'},t5+2.4);
+tl.from('#s5sub',{opacity:0,y:30,duration:.7},t5+2.2);
+tl.to({}, {duration:.01}, T.end);
+
+
+/* ---------- avatar presenter ---------- */
+const LINES = [
+  {t:0.7,  txt:'היי! רוצים שהאירוע שלכם יישאר איתכם... לתמיד?'},
+  {t:4.5,  txt:'מגנטים טריים ואיכותיים – ללא הגבלה, לאורך כל האירוע!'},
+  {t:9.9,  txt:'צילומי סטילס מקצועיים – צילומי יום, וצילומים ספונטניים שתופסים כל רגע.'},
+  {t:15.3, txt:'ועכשיו אפשר להוסיף גם קיר צילום מעוצב – במחיר לכל כיס!'},
+  {t:21.2, txt:'הכל בחבילה אחת. שריינו את התאריך שלכם עוד היום!'},
+];
+// build word timings (rate ~ 13 chars/sec, pauses after punctuation)
+for(const L of LINES){
+  let c=L.t; L.words=[];
+  for(const w of L.txt.split(' ')){
+    if(w==='–'){ c+=0.18; L.words.push({w,s:c,e:c,dash:true}); continue; }
+    const d=Math.max(.22, w.replace(/[^֐-׿]/g,'').length/13);
+    L.words.push({w,s:c,e:c+d}); c+=d+0.05;
+    if(/[,.!?…]$/.test(w)) c+=0.28;
+  }
+  L.end=c;
+}
+const bt=$('#btext'), bub=$('#bubble');
+let curLine=-1;
+const mouths=[...document.querySelectorAll('#aMouth .m')];
+function setMouth(k){ mouths.forEach(m=>m.style.display = (+m.dataset.m===k)?'':'none'); }
+const BROW_UP=[[6.1,7.2],[16.6,17.8],[0.8,1.6],[22.6,23.4]];
+const WAVE=[[0.6,2.4],[24.2,26]];
+const POINT=[[5.6,7.0],[10.6,11.6],[16.4,18.0]];
+function inR(t,arr){ for(const [a,b] of arr) if(t>=a&&t<=b) return (t-a)/(b-a); return -1; }
+function updAvatar(t){
+  // entrance
+  const enter = Math.min(1, Math.max(0,(t-0.3)/0.5));
+  const eb = 1 - Math.pow(1-enter,3);
+  const pop = enter<1 ? (0.4+0.6*eb + Math.sin(enter*Math.PI)*0.12) : 1;
+  $('#avatar').style.transform = `scale(${pop})`; $('#avatar').style.opacity = eb;
+  // line + words
+  let li=-1; for(let i=0;i<LINES.length;i++) if(t>=LINES[i].t-0.15 && t<LINES[i].end+0.7) li=i;
+  if(li!==curLine){ curLine=li; bt.innerHTML = li<0?'':LINES[li].words.filter(x=>!x.dash||true).map(x=>`<span class="w">${x.w}</span>`).join(''); }
+  let speaking=false, mouth=0, wordPhase=0;
+  if(li>=0){
+    const L=LINES[li], spans=bt.children;
+    const k=Math.min(1,Math.max(0,(t-(L.t-0.15))/0.25));
+    bub.style.opacity = (t>L.end+0.45)? Math.max(0,1-(t-L.end-0.45)/0.25) : k;
+    bub.style.transform = `translateY(${(1-k)*20}px) scale(${0.96+0.04*k})`;
+    L.words.forEach((w,i)=>{ const on=t>=w.s; spans[i].style.opacity = on?1:.28; spans[i].style.color = (t>=w.s&&t<w.e)?'#b8915f':'#5e4532';
+      if(!w.dash && t>=w.s && t<w.e){ speaking=true; wordPhase=(t-w.s); } });
+  } else bub.style.opacity=0;
+  if(speaking){ const seq=[1,2,3,2,4,1,2]; mouth = seq[Math.floor(wordPhase*12 + curLine*3)%seq.length]; }
+  else mouth = (inR(t,BROW_UP)>=0) ? 4 : 0;
+  setMouth(mouth);
+  // blink
+  const bp=(t+0.7)%3.3, blink = bp<0.13 ? Math.abs(Math.cos(bp/0.13*Math.PI)) : 1;
+  $('#aEyeL').style.transform=$('#aEyeR').style.transform=`scaleY(${Math.max(.08,blink)})`;
+  // brows
+  const br=inR(t,BROW_UP); const up = br>=0 ? Math.sin(Math.min(1,br*4)*Math.PI/2)*(br>0.8?(1-br)/0.2:1) : 0;
+  $('#aBrows').setAttribute('transform',`translate(0 ${-7*up})`);
+  // head motion: gentle sway + nod when speaking
+  const nod = speaking ? Math.sin(t*9)*1.6 : 0;
+  $('#aHead').setAttribute('transform',`rotate(${Math.sin(t*1.3)*3.5 + (br>=0?-4*up:0)} 150 220) translate(0 ${nod})`);
+  // arm: wave or point, hidden otherwise
+  const wv=inR(t,WAVE), pt=inR(t,POINT), arm=$('#aArm');
+  if(wv>=0){ const r=Math.sin(wv*Math.PI*6)*18; const show=Math.min(1,wv*6,(1-wv)*6); arm.setAttribute('transform',`translate(0 ${(1-show)*120}) rotate(${r} 230 290)`); }
+  else if(pt>=0){ const show=Math.min(1,pt*5,(1-pt)*5); arm.setAttribute('transform',`translate(0 ${(1-show)*120}) rotate(${-16+Math.sin(pt*Math.PI*4)*5} 230 290)`); }
+  else arm.setAttribute('transform','translate(0 140)');
+}
+window.DURATION = T.end;
+window.seek = (t) => {
+  tl.seek(t, false);
+  updBalloons(b1, t, 1);
+  updBalloons(b5, t, .6);
+  updAvatar(t);
+  const c = t < T.s3+1.42 ? 1 : t < T.s3+2.72 ? 2 : 3;
+  $('#s3count').textContent = 'IMG ' + String(c).padStart(3,'0');
+};
+window.seek(0);
+
+// live preview when opened normally
+if(!location.search.includes('render')){
+  const t0 = performance.now();
+  (function loop(){ const t=((performance.now()-t0)/1000)%T.end; window.seek(t); requestAnimationFrame(loop);} )();
+}
+</script>
+</body>
+</html>
