@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Presenter Ad v2</title>
+<link rel="stylesheet" href="assets/fonts_local.css">
+<style>
+  :root{--cream:#f8f2e9;--cream2:#efe3d1;--sand:#dcc7a9;--gold:#b8915f;--brown:#5e4532;--brown2:#8a6a4f;--white:#fffdf9}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:var(--cream)}
+  body{font-family:'Heebo',sans-serif;color:var(--brown)}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+  .scene{position:absolute;inset:0;overflow:hidden;opacity:0}
+  .bg{position:absolute;inset:0;background:radial-gradient(1300px 1000px at 35% 40%,#fffaf2 0%,var(--cream) 45%,var(--cream2) 100%)}
+  .floor{position:absolute;left:0;right:0;bottom:0;height:260px;background:linear-gradient(to bottom,rgba(200,175,140,0),rgba(200,175,140,.35))}
+  .abs{position:absolute}
+  .suez{font-family:'Suez One',serif}
+  .script{font-family:'Great Vibes',cursive;color:var(--gold);direction:ltr}
+  .kick{font-size:46px;font-weight:500;color:var(--gold);letter-spacing:3px}
+  .title{font-family:'Suez One',serif;font-size:100px;line-height:1.05}
+  .left{right:auto;left:40px;width:600px;text-align:center}
+  .balloon{position:absolute;border-radius:50%;box-shadow:inset -18px -22px 40px rgba(120,90,60,.18),0 20px 40px rgba(120,90,60,.12)}
+  .pol{position:absolute;width:290px;height:360px;background:var(--white);padding:16px 16px 0;box-shadow:0 26px 50px rgba(90,60,30,.25);border-radius:6px}
+  .pol .ph{width:100%;height:258px;background-image:url(assets/wall.jpg);background-size:900px 1200px}
+  .pol .cap{font-family:'Great Vibes',cursive;color:var(--brown2);font-size:38px;text-align:center;margin-top:12px;direction:ltr}
+  .pin{position:absolute;top:-16px;left:50%;width:36px;height:36px;margin-left:-18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3dcb0,var(--gold) 55%,#7d5c33)}
+  .stamp{position:absolute;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#e7c890,var(--gold) 60%,#94703f);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 22px 44px rgba(110,80,40,.35)}
+  .stamp::before{content:"";position:absolute;inset:12px;border:3px dashed rgba(255,255,255,.7);border-radius:50%}
+  .pill{display:block;margin:0 auto 22px;width:520px;padding:20px 0;border-radius:999px;font-weight:700;font-size:44px;text-align:center;background:var(--white);box-shadow:0 12px 28px rgba(90,60,30,.18)}
+  .pill b{color:var(--gold)}
+  .frame{position:absolute;background:var(--white);padding:14px;border-radius:18px;box-shadow:0 34px 70px rgba(90,60,30,.3)}
+  .frame .in{width:100%;height:100%;overflow:hidden;border-radius:8px;position:relative}
+  .vf{position:absolute;border-color:#fff;border-style:solid;width:70px;height:70px}
+  .row{display:flex;align-items:center;gap:22px;background:var(--white);border-radius:24px;padding:22px 28px;margin-bottom:24px;width:600px;box-shadow:0 12px 28px rgba(90,60,30,.15);font-size:40px;font-weight:500}
+  .check{flex:none;width:62px;height:62px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center}
+  .btn{display:inline-block;padding:30px 60px;border-radius:999px;font-family:'Suez One';font-size:54px;color:#fff;background:linear-gradient(135deg,#c9a26b,#9c7646);box-shadow:0 22px 50px rgba(120,85,40,.4)}
+  #sub{position:absolute;z-index:30;left:40px;width:620px;top:1640px;background:rgba(40,28,18,.8);color:#fff;font-weight:500;font-size:40px;line-height:1.32;padding:20px 28px;border-radius:26px;text-align:center}
+  #sub .k{color:#f0d3a0;font-weight:800}
+  #flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:60}
+  .spark{position:absolute;width:40px;height:40px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="balloons" style="position:absolute;inset:0"></div>
+
+  <section class="scene" id="s1"><div class="bg"></div><div class="floor"></div>
+    <div class="abs script" id="s1a" style="left:0;right:0;text-align:center;top:60px;font-size:96px">Stills &amp; Magnets</div>
+    <div class="abs title" id="s1b" style="left:0;right:0;text-align:center;top:180px;color:var(--brown2)">חבילת סטילס <span style="color:var(--gold)">+</span> מגנטים</div>
+    <div class="abs" id="s1c" style="left:0;right:0;text-align:center;top:320px;font-size:46px;font-weight:300">לברית · בר/בת מצווה · חתונה · כל אירוע</div>
+  </section>
+
+  <section class="scene" id="s2"><div class="bg"></div><div class="floor"></div>
+    <div class="abs kick left" id="s2k" style="top:110px">חלק 1 · מגנטים</div>
+    <div class="abs title left" id="s2t" style="top:170px;font-size:88px">טריים<br>ואיכותיים</div>
+    <div class="pol" id="p1" style="left:30px;top:520px"><div class="pin"></div><div class="ph" style="background-position:-375px -420px"></div><div class="cap">Welcome</div></div>
+    <div class="pol" id="p2" style="left:330px;top:500px;z-index:2"><div class="pin"></div><div class="ph" style="background-position:-330px -555px"></div><div class="cap">Baby Boy</div></div>
+    <div class="pol" id="p3" style="left:180px;top:820px;z-index:3"><div class="pin"></div><div class="ph" style="background-position:-135px -570px"></div><div class="cap">Sweet</div></div>
+    <div class="stamp" id="s2s" style="left:400px;top:1150px;z-index:5"><div class="suez" style="font-size:60px;line-height:1">ללא</div><div class="suez" style="font-size:60px;line-height:1">הגבלה!</div></div>
+    <div class="abs left" id="s2b" style="top:1440px;font-size:52px;font-weight:300">לאורך <b style="font-weight:800">כל האירוע</b></div>
+  </section>
+
+  <section class="scene" id="s3"><div class="bg"></div><div class="floor"></div>
+    <div class="abs kick left" id="s3k" style="top:110px">חלק 2 · סטילס</div>
+    <div class="abs title left" id="s3t" style="top:170px;font-size:92px">צילומי סטילס</div>
+    <div class="frame" id="s3f" style="left:40px;top:340px;width:600px;height:760px"><div class="in">
+      <div id="s3img" style="position:absolute;inset:0;background:url(assets/wall.jpg) center/cover"></div>
+      <div class="vf" style="left:24px;top:24px;border-width:5px 0 0 5px"></div><div class="vf" style="right:24px;top:24px;border-width:5px 5px 0 0"></div>
+      <div class="vf" style="left:24px;bottom:24px;border-width:0 0 5px 5px"></div><div class="vf" style="right:24px;bottom:24px;border-width:0 5px 5px 0"></div>
+      <div id="s3shut" style="position:absolute;inset:0;background:#000;opacity:0"></div>
+    </div></div>
+    <div class="abs" style="left:40px;width:600px;top:1150px">
+      <div class="pill" id="s3p1"><b>צילומי יום</b> מסודרים</div>
+      <div class="pill" id="s3p2">רגעים <b>ספונטניים</b></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s4"><div class="bg"></div><div class="floor"></div>
+    <div class="abs kick left" id="s4k" style="top:110px">תוספת מושלמת</div>
+    <div class="abs title left" id="s4t" style="top:170px;font-size:92px">קיר צילום</div>
+    <div class="frame" id="s4f" style="left:40px;top:340px;width:600px;height:800px"><div class="in"><div id="s4img" style="position:absolute;inset:0;background:url(assets/wall.jpg) center/cover"></div></div></div>
+    <svg class="spark" id="k1" style="left:20px;top:330px" viewBox="0 0 40 40"><path d="M20 0 L24 16 L40 20 L24 24 L20 40 L16 24 L0 20 L16 16Z" fill="#d6b27a"/></svg>
+    <svg class="spark" id="k2" style="left:620px;top:700px" viewBox="0 0 40 40"><path d="M20 0 L24 16 L40 20 L24 24 L20 40 L16 24 L0 20 L16 16Z" fill="#d6b27a"/></svg>
+    <div class="abs" id="s4r" style="left:30px;width:620px;top:1180px;height:150px;border-radius:22px;background:linear-gradient(135deg,#c9a26b,#9c7646);box-shadow:0 22px 44px rgba(110,80,40,.4);display:flex;align-items:center;justify-content:center;color:#fff"><span class="suez" style="font-size:76px">במחיר לכל כיס</span></div>
+    <div class="abs left" id="s4s" style="top:1380px;font-size:44px;font-weight:300">מעוצב <b style="font-weight:800">בהתאמה אישית</b></div>
+  </section>
+
+  <section class="scene" id="s5"><div class="bg"></div><div class="floor"></div>
+    <div class="abs script left" id="s5a" style="top:90px;font-size:90px">All in one</div>
+    <div class="abs title left" id="s5t" style="top:210px;font-size:84px">הכל בחבילה<br>אחת</div>
+    <div class="abs" style="left:40px;top:470px">
+      <div class="row" id="r1"><div class="check"><svg width="36" height="36" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg></div>מגנטים ללא הגבלה</div>
+      <div class="row" id="r2"><div class="check"><svg width="36" height="36" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg></div>סטילס יום וספונטני</div>
+      <div class="row" id="r3"><div class="check"><svg width="36" height="36" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg></div>קיר צילום במחיר לכל כיס</div>
+    </div>
+    <div class="abs left" style="top:1010px"><span class="btn" id="s5b">שריינו תאריך</span></div>
+    <div class="abs left" id="s5s" style="top:1200px;font-size:46px;font-weight:300">שלחו לנו <b style="font-weight:800">הודעה עוד היום</b></div>
+  </section>
+
+  <div id="sub"></div>
+  <div id="flash"></div>
+</div>
+<script>window.LINES=[[0.6, 11.496], [12.896, 9.792], [23.488, 8.232], [32.52, 9.528], [42.848, 7.488]];window.CUES=[[0.7, 2.72, "שלום!"], [2.42, 7.18, "מתכננים ברית, בר מצווה, או אירוע משפחתי?"], [6.93, 10.63, "יש לנו חבילה שתשאיר לכם את האירוע..."], [10.38, 12.29, "<span class=\"k\">לתמיד</span>."], [13.0, 19.55, "בחבילה תקבלו <span class=\"k\">מגנטים</span> טריים ואיכותיים, <span class=\"k\">ללא הגבלה</span>, לאורך כל האירוע."], [19.25, 22.93, "כל אורח חוזר הביתה עם מזכרת."], [23.59, 32.02, "צלם סטילס מקצועי מלווה אתכם לאורך כל האירוע: <span class=\"k\">צילומי יום</span> מסודרים, וגם רגעים <span class=\"k\">ספונטניים</span> ואמיתיים."], [32.62, 38.24, "ורוצים להוסיף <span class=\"k\">קיר צילום</span> מעוצב, בהתאמה אישית לאירוע שלכם?"], [37.94, 39.79, "אפשר!"], [39.54, 42.29, "ו<span class=\"k\">במחיר לכל כיס</span>."], [42.95, 45.67, "הכל בחבילה אחת."], [45.37, 50.58, "שלחו לנו הודעה, ותשריינו את התאריך שלכם <span class=\"k\">כבר היום</span>!"]];</script>
+<script src="assets/gsap.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+// line start times (voice) and durations — filled by the build script
+const LINES = window.LINES || [[0.6,11.5],[12.9,9.8],[23.3,8.2],[32.1,9.5],[42.2,7.5]];
+const S = [0, LINES[1][0]-0.6, LINES[2][0]-0.6, LINES[3][0]-0.6, LINES[4][0]-0.6]; // scene starts
+const END = LINES[4][0]+LINES[4][1]+1.6;
+const CUES = window.CUES || [];
+gsap.defaults({ease:'power3.out'});
+const tl=gsap.timeline({paused:true});
+// scene visibility with crossfade + slight zoom
+['#s1','#s2','#s3','#s4','#s5'].forEach((id,i)=>{
+  const a=S[i], b=i<4?S[i+1]:END+1;
+  tl.fromTo(id,{opacity:0,scale:1.04},{opacity:1,scale:1,duration:.5,ease:'power2.out'},a);
+  if(i<4) tl.to(id,{opacity:0,duration:.35,ease:'power1.in'},b-0.05);
+});
+// flashes on transitions
+[S[1],S[2],S[3],S[4]].forEach(t=>{tl.fromTo('#flash',{opacity:.55},{opacity:0,duration:.45},t-0.02);});
+// S1
+tl.from('#s1a',{opacity:0,y:-30,duration:.8},0.3).from('#s1b',{opacity:0,y:50,duration:.8,ease:'back.out(1.6)'},0.55).from('#s1c',{opacity:0,duration:.8},1.0);
+// S2
+let t=S[1];
+tl.from('#s2k',{opacity:0,x:-40,duration:.5},t+.2).from('#s2t',{opacity:0,y:50,duration:.6,ease:'back.out(1.6)'},t+.35);
+tl.fromTo('#p1',{y:-1000,rotation:-25},{y:0,rotation:-9,duration:.9,ease:'bounce.out'},t+1.6);
+tl.fromTo('#p2',{y:-1000,rotation:20},{y:0,rotation:7,duration:.9,ease:'bounce.out'},t+2.0);
+tl.fromTo('#p3',{y:-1300,rotation:-5},{y:0,rotation:-2,duration:.9,ease:'bounce.out'},t+2.4);
+tl.fromTo('#s2s',{scale:3,opacity:0,rotation:-40},{scale:1,opacity:1,rotation:-10,duration:.5,ease:'power4.in'},t+3.6);
+tl.to('#s2s',{scale:1.08,duration:.4,yoyo:true,repeat:5,ease:'sine.inOut'},t+4.2);
+tl.from('#s2b',{opacity:0,y:30,duration:.6},t+5.2);
+// S3 (shutter clicks swap crops)
+t=S[2];
+tl.from('#s3k',{opacity:0,x:-40,duration:.5},t+.2).from('#s3t',{opacity:0,y:50,duration:.6,ease:'back.out(1.6)'},t+.35);
+tl.from('#s3f',{opacity:0,y:120,scale:.9,duration:.8},t+.5);
+tl.set('#s3img',{backgroundSize:'1500px auto',backgroundPosition:'-620px -720px'},t);
+tl.to('#s3img',{backgroundPosition:'-660px -760px',duration:2.4,ease:'none'},t+.5);
+[[t+2.9,'-180px -920px','1400px auto'],[t+5.4,'center center','cover']].forEach(([at,pos,size])=>{
+  tl.to('#s3shut',{opacity:1,duration:.08},at).set('#s3img',{backgroundPosition:pos,backgroundSize:size},at+.08).to('#s3shut',{opacity:0,duration:.18},at+.12);
+  tl.fromTo('#flash',{opacity:.35},{opacity:0,duration:.3},at+.12);
+});
+tl.from('#s3p1',{opacity:0,scale:.5,duration:.5,ease:'back.out(2)'},t+3.6).from('#s3p2',{opacity:0,scale:.5,duration:.5,ease:'back.out(2)'},t+5.3);
+// S4
+t=S[3];
+tl.from('#s4k',{opacity:0,x:-40,duration:.5},t+.2).from('#s4t',{opacity:0,y:50,duration:.6,ease:'back.out(1.6)'},t+.35);
+tl.from('#s4f',{opacity:0,y:150,rotation:3,scale:.88,duration:1},t+.6);
+tl.fromTo('#s4img',{scale:1.3},{scale:1,duration:9,ease:'power1.out'},t+.6);
+tl.fromTo('#s4r',{scale:2.4,opacity:0,rotation:-8},{scale:1,opacity:1,rotation:-3,duration:.5,ease:'power4.in'},t+6.3);
+tl.to('#s4r',{scale:1.05,duration:.4,yoyo:true,repeat:5,ease:'sine.inOut'},t+6.9);
+tl.from('#s4s',{opacity:0,y:30,duration:.6},t+3.2);
+['#k1','#k2'].forEach((s,i)=>tl.fromTo(s,{scale:0,rotation:0},{scale:1.3,rotation:180,duration:.7,yoyo:true,repeat:5,ease:'back.out(2)'},t+1.5+i*.5));
+// S5
+t=S[4];
+tl.from('#s5a',{opacity:0,duration:.6},t+.2).from('#s5t',{opacity:0,y:50,duration:.6,ease:'back.out(1.6)'},t+.35);
+tl.from(['#r1','#r2','#r3'],{opacity:0,x:-300,duration:.5,stagger:.35,ease:'back.out(1.4)'},t+1.0);
+tl.from('#s5b',{opacity:0,scale:.5,duration:.6,ease:'back.out(2)'},t+3.0);
+tl.to('#s5b',{scale:1.07,duration:.45,yoyo:true,repeat:9,ease:'sine.inOut'},t+3.6);
+tl.from('#s5s',{opacity:0,y:30,duration:.6},t+3.4);
+tl.to({}, {duration:.01}, END);
+
+// balloons (intro + outro)
+const COLORS=['#efe5d6','#fbf8f3','#e3d3bb','#f5eee3','#d9c6aa'];
+function rnd(i){const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+const B=[];for(let i=0;i<14;i++){const el=document.createElement('div');el.className='balloon';const sz=70+rnd(i*3.3)*120,c=COLORS[Math.floor(rnd(i*7.1)*5)];
+ el.style.cssText+=`width:${sz}px;height:${sz}px;background:radial-gradient(circle at 35% 30%,#fff 0%,${c} 45%,${c} 100%)`;$('#balloons').appendChild(el);
+ B.push({el,x:(i%2?-30+rnd(i*5)*200:880+rnd(i*5)*200-sz/2),sp:60+rnd(i*9)*80,ph:rnd(i*2)*6.28,st:rnd(i*11)*1920});}
+function balloons(t){const vis=(t<S[1]+.3)||(t>S[4]-.2);$('#balloons').style.opacity=vis?1:0;
+ for(const b of B){const y=(b.st+2120-t*b.sp)%2320-200;b.el.style.transform=`translate(${b.x+Math.sin(t*1.2+b.ph)*16}px,${y}px)`;}}
+
+// presenter geometry: pose per scene, slide-in from the right each scene, gentle idle sway
+const POSES=['welcome','point','present','show','thumbs'];
+window.pres=function(t){
+  let i=0; for(let k=0;k<5;k++) if(t>=S[k]) i=k;
+  const local=t-S[i];
+  const center = i===0 ? {cx:540,h:1430} : {cx:820,h:1390};
+  // intro: slide in from right; later scenes: quick slide from right
+  const inDur = i===0?0.9:0.55, k=Math.min(1,Math.max(0,local/inDur)), e=1-Math.pow(1-k,3);
+  // intro→scene2 move handled by slide; also during intro at the very end nothing
+  const dx=(1-e)*700;
+  const sway=Math.sin(t*1.1)*6, breathe=1+Math.sin(t*2.2)*0.004;
+  return {pose:POSES[i], idx:i, cx:center.cx+dx+sway, bottom:1915, h:center.h*breathe, alpha:Math.min(1,local/0.25+ (i>0?1:0)), local:local, lineStart:LINES[i][0]-S[i]};
+};
+const sub=$('#sub');let last='';
+function subs(t){let c=null;for(const q of CUES)if(t>=q[0]&&t<q[1])c=q;if(!c){sub.style.opacity=0;return;}
+ if(c[2]!==last){sub.innerHTML=c[2];last=c[2];}const intro=t<S[1];Object.assign(sub.style,intro?{left:'140px',width:'800px',top:'395px',fontSize:'42px'}:{left:'40px',width:'620px',top:'1640px',fontSize:'40px'});const a=Math.min(1,(t-c[0])/.15);sub.style.opacity=a;sub.style.transform=`translateY(${(1-a)*10}px)`;}
+window.DURATION=END;
+window.seek=t=>{tl.seek(t,false);balloons(t);subs(t);};
+window.seek(0);
+if(!location.search.includes('render')){const t0=performance.now();(function L(){seek(((performance.now()-t0)/1000)%END);requestAnimationFrame(L);})();}
+</script>
+</body>
+</html>
