@@ -1,0 +1,11 @@
+{
+  "name": "טוטו חכם",
+  "short_name": "טוטו חכם",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eef2ee",
+  "theme_color": "#0b3d2c",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

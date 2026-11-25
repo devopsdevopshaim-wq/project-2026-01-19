@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>טוטו חכם</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="מערכת ניחושים לטוטו כדורגל: משחקי השבוע, ראש בראש, סטטיסטיקות ובניית טופס 16 משחקים">
+<meta name="theme-color" content="#0b3d2c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Secular+One&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app" dir="rtl">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><i>1</i><i>X</i><i>2</i></span>
+        <span class="brand-name">טוטו חכם</span>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" id="tab-form" data-tab="form">הטופס שלי</button>
+        <button role="tab" id="tab-week" data-tab="week">משחקי השבוע</button>
+        <button role="tab" id="tab-tables" data-tab="tables">טבלאות</button>
+        <button role="tab" id="tab-info" data-tab="info">מידע</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="status" class="status" role="status">טוען נתונים…</div>
+
+    <!-- FORM -->
+    <section id="view-form" class="view" hidden>
+      <div class="slip-head">
+        <div>
+          <h1>טופס 16 משחקים</h1>
+          <p class="sub" id="form-sub">הוסף את המשחקים מהטופס הרשמי, והמערכת תסמן ניחוש לכל משחק.</p>
+        </div>
+        <div class="slip-actions">
+          <button class="btn primary" id="btn-autofill">מילוי מהמשחקים הקרובים</button>
+          <button class="btn" id="btn-add-manual">הוספת משחק</button>
+          <button class="btn" id="btn-copy">העתקת הטופס</button>
+          <button class="btn ghost" id="btn-clear">ניקוי</button>
+        </div>
+      </div>
+
+      <div class="system">
+        <div class="sys-controls">
+          <label class="field">
+            <span>שיטת מילוי</span>
+            <select id="sys-mode">
+              <option value="cols">לפי מספר טורים</option>
+              <option value="dt">לפי כפולים ומשולשים</option>
+            </select>
+          </label>
+          <label class="field" id="f-cols">
+            <span>מקסימום טורים</span>
+            <select id="sys-cols"></select>
+          </label>
+          <label class="field" id="f-d" hidden>
+            <span>כפולים</span>
+            <input id="sys-d" type="number" min="0" max="16" value="3" inputmode="numeric">
+          </label>
+          <label class="field" id="f-t" hidden>
+            <span>משולשים</span>
+            <input id="sys-t" type="number" min="0" max="16" value="1" inputmode="numeric">
+          </label>
+          <label class="field">
+            <span>מחיר טור (₪)</span>
+            <input id="sys-price" type="number" min="0" step="0.5" value="3" inputmode="decimal">
+          </label>
+        </div>
+        <div class="sys-summary" id="sys-summary"></div>
+      </div>
+
+      <ol class="slip" id="slip"></ol>
+      <p class="hint">לחיצה על 1 / X / 2 קובעת ניחוש ידני למשחק (המערכת תתאים את שאר הטופס). לחיצה על שם המשחק פותחת סקירה מלאה.</p>
+    </section>
+
+    <!-- WEEK -->
+    <section id="view-week" class="view" hidden>
+      <div class="week-head">
+        <h1>משחקי השבוע</h1>
+        <div class="range">
+          <button class="chip" data-range="week">7 ימים קרובים</button>
+          <button class="chip" data-range="weekend">סוף השבוע</button>
+          <button class="chip" data-range="next">השבוע הבא</button>
+          <label class="field inline"><span>מ־</span><input type="date" id="w-from"></label>
+          <label class="field inline"><span>עד</span><input type="date" id="w-to"></label>
+        </div>
+        <div class="league-chips" id="league-chips"></div>
+      </div>
+      <div id="week-list"></div>
+    </section>
+
+    <!-- TABLES -->
+    <section id="view-tables" class="view" hidden>
+      <div class="week-head">
+        <h1>טבלאות ליגה</h1>
+        <label class="field"><span>ליגה</span><select id="t-league"></select></label>
+      </div>
+      <div id="table-box"></div>
+    </section>
+
+    <!-- INFO -->
+    <section id="view-info" class="view" hidden>
+      <div id="info-box"></div>
+    </section>
+  </main>
+
+  <div class="sheet-back" id="sheet-back" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden>
+    <div class="sheet-bar"><button class="btn ghost" id="sheet-close" aria-label="סגירה">סגירה ✕</button></div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+</div>
+<script src="js/names.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
