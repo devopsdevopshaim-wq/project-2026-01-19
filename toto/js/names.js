@@ -40,9 +40,14 @@ function tokMatch(x, y) {
 }
 
 // Similarity 0..1 between two normalised keys; generic words (city, united…) weigh little.
+// Club-type words that tell clubs from the same city apart (Hapoel vs Maccabi, City vs United).
+const DISC = new Set('hapoel maccabi beitar bnei sektzia moadon city united real atletico athletic sporting inter rovers wanderers albion county town'.split(' '));
+
 function keySimilarity(a, b) {
   if (a === b) return 1;
   const A = a.split(' '), B = b.split(' ');
+  const dA = A.filter(t => DISC.has(t)), dB = B.filter(t => DISC.has(t));
+  if (dA.length && dB.length && !dA.some(t => dB.includes(t))) return 0;
   const wt = t => (GENERIC.has(t) ? 0.3 : 1);
   let hit = 0;
   for (const x of A) if (B.some(y => tokMatch(x, y))) hit += wt(x);
@@ -68,7 +73,7 @@ const HE = {
   'umm al fahm': 'הפועל אום אל פאחם', 'maccabi jaffa': 'מכבי יפו', 'hapoel ramat gan': 'הפועל רמת גן', 'kfar shalem': 'הפועל כפר שלם',
   'hapoel ramat hasharon': 'הפועל רמת השרון', 'hapoel nir ramat hasharon': 'הפועל רמת השרון', 'maccabi kabilio jaffa': 'מכבי יפו',
   'hapoel kfar kana': 'הפועל כפר קנא', 'kafr qasim': 'הפועל כפר קאסם', 'hapoel kafr qasim': 'הפועל כפר קאסם', 'sektzia nes tziona': 'סקציה נס ציונה',
-  'hapoel iksal': 'הפועל איכסאל', 'ironi modiin': 'עירוני מודיעין', 'hapoel ironi karmiel': 'הפועל כרמיאל', 'hapoel nazareth illit': 'הפועל נוף הגליל',
+  'hapoel iksal': 'הפועל איכסאל', 'hapoel kiryat yam': 'הפועל קריית ים', 'maccabi kiryat gat': 'מכבי קריית גת', 'maccabi akhi nazareth': 'מכבי אחי נצרת', 'ironi modiin': 'עירוני מודיעין', 'hapoel ironi karmiel': 'הפועל כרמיאל', 'hapoel nazareth illit': 'הפועל נוף הגליל',
   // England
   'arsenal': 'ארסנל', 'chelsea': "צ'לסי", 'liverpool': 'ליברפול', 'manchester city': "מנצ'סטר סיטי", 'manchester united': "מנצ'סטר יונייטד",
   'tottenham hotspur': 'טוטנהאם', 'newcastle united': 'ניוקאסל', 'aston villa': 'אסטון וילה', 'west ham united': 'ווסטהאם', 'everton': 'אברטון',

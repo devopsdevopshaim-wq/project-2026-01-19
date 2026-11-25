@@ -196,3 +196,22 @@ tr.click { cursor: pointer; } tr.click:hover td { background: var(--bg); }
   @keyframes up { from { transform: translateY(24px); opacity: .4; } }
   @media (min-width: 860px) { @keyframes up { from { transform: translate(-50%, 16px); opacity: .4; } } }
 }
+
+/* factor breakdown */
+.reason { font-size: .78rem; color: var(--muted); }
+.factors { display: grid; gap: 10px; }
+.f-head { display: grid; grid-template-columns: 1fr 1fr 1fr; font-weight: 700; font-size: .85rem; }
+.f-head span:last-child { text-align: left; }
+.f-row { display: grid; gap: 3px; }
+.f-name { font-size: .78rem; color: var(--muted); }
+.f-vals { display: grid; grid-template-columns: minmax(0, 1fr) minmax(70px, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; font-size: .85rem; }
+.f-vals span:last-child { text-align: left; }
+.fbar { position: relative; height: 10px; background: var(--bg); border-radius: 5px; direction: ltr; }
+.fbar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.fbar i { position: absolute; top: 0; bottom: 0; border-radius: 5px; }
+.fbar i.h { background: var(--o1); }
+.fbar i.a { background: var(--o2); }
+@media (max-width: 700px) {
+  .league-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+  .league-chips .chip { flex: none; }
+}

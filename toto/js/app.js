@@ -5,7 +5,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const pct = x => (x == null || isNaN(x) ? '–' : Math.round(x * 100) + '%');
 const fx = (x, d = 1) => (x == null || isNaN(x) ? '–' : (+x).toFixed(d));
-const PRIORITY = ['isr.1', 'en.1', 'es.1', 'it.1', 'de.1', 'fr.1', 'ucl', 'uel', 'uecl', 'en.2', 'nl.1', 'pt.1', 'tr.1', 'be.1', 'sco.1'];
+const PRIORITY = ['isr.1', 'isr.2', 'en.1', 'es.1', 'it.1', 'de.1', 'fr.1', 'ucl', 'uel', 'uecl', 'en.2', 'nl.1', 'pt.1', 'tr.1', 'be.1', 'sco.1'];
 const DEFAULT_P = { '1': 0.45, 'X': 0.28, '2': 0.27 }; // league-wide average when no data
 
 const S = Object.assign({
@@ -153,6 +153,7 @@ function renderForm() {
       <div class="teams" data-open="${i}">
         <b>${home} – ${away}</b>
         <div class="meta"><span>${r.manual ? 'משחק ידני' : esc(leagueName(r.code))}</span><span>${fmtDate(e.d, r.m && r.m.t)}</span>${tags}</div>
+        ${x.known && x.pr ? reasonLine(x.pr, tName(r.code, r.h), tName(r.code, r.a)) : ''}
       </div>
       <div class="side">
         <div class="boxes">${boxes}</div>
@@ -325,12 +326,56 @@ function card(code, m, inForm) {
   return `<article class="card">
     <div class="lg"><span>${esc(leagueName(code))} ${staleTag(code)}</span><span>${m.status && m.hg == null && m.state !== 'pre' ? esc(m.status) : ''}</span></div>
     <div class="vs" data-match="${code}|${L.m.indexOf(m)}"><b>${esc(L.teams[m.h].he)}</b><span class="mid">${esc(mid)}</span><b>${esc(L.teams[m.a].he)}</b></div>
-    ${P ? probBar(P) : '<div class="note">אין מספיק נתונים לתחזית</div>'}
+    ${P ? probBar(P) + reasonLine(p, L.teams[m.h].he, L.teams[m.a].he) : '<div class="note">אין מספיק נתונים לתחזית</div>'}
     <div class="card-foot">
       <span>${P ? `ניחוש: <span class="pick">${bestPick(P)}</span> · צפי ${fx(p.lh)}–${fx(p.la)}` : ''}</span>
       ${m.hg == null ? (inForm.has(k) ? '<span class="tag hit">בטופס</span>' : `<button class="btn small" data-addm="${code}|${L.m.indexOf(m)}">+ לטופס</button>`) : ''}
     </div>
   </article>`;
+}
+
+const FACTOR_SHORT = { str: 'כוח', table: 'טבלה', form: 'כושר', venue: 'בית/חוץ', h2h: 'ראש בראש' };
+function reasonLine(p, H, A) {
+  if (!p || !p.contrib) return '';
+  const pro = side => Object.entries(p.contrib).filter(([, v]) => (side > 0 ? v > 0.04 : v < -0.04)).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1])).map(([k]) => FACTOR_SHORT[k]);
+  const a = pro(1), b = pro(-1);
+  const parts = [];
+  if (a.length) parts.push(`בעד ${esc(H)}: ${a.join(', ')}`);
+  if (b.length) parts.push(`בעד ${esc(A)}: ${b.join(', ')}`);
+  return parts.length ? `<div class="reason">${parts.join(' · ')}</div>` : '<div class="reason">המדדים מאוזנים</div>';
+}
+
+function factorPanel(p, H, A, ph, pa) {
+  if (!p || !p.contrib) return '';
+  const ppgS = s => (s && s.n ? (s.pts / s.n).toFixed(2) : '–');
+  const rec = s => (s && s.n ? `${s.w}-${s.d}-${s.l}` : '–');
+  const f6 = s => { const l = s.form.slice(0, 6); return l.length ? `${l.reduce((t, x) => t + (x.r === 'W' ? 3 : x.r === 'D' ? 1 : 0), 0)} נק׳ מ־${l.length * 3}` : '–'; };
+  const hr = p.h2hRec;
+  const rows = [
+    ['str', `${fx(p.lh, 2)} שערים צפויים`, `${fx(p.la, 2)} שערים צפויים`],
+    ['table', `${ph ? 'מקום ' + ph.pos + ' · ' : ''}${ppgS(p.sh.all)} נק׳ למשחק`, `${pa ? 'מקום ' + pa.pos + ' · ' : ''}${ppgS(p.sa.all)} נק׳ למשחק`],
+    ['form', f6(p.sh), f6(p.sa)],
+    ['venue', `בבית ${rec(p.sh.home)} (${ppgS(p.sh.home)})`, `בחוץ ${rec(p.sa.away)} (${ppgS(p.sa.away)})`],
+    ['h2h', hr.n ? `${hr.w} ניצחונות` : 'אין מפגשים', hr.n ? `${hr.l} ניצחונות · ${hr.d} תיקו` : ''],
+  ];
+  const max = Math.max(0.35, ...Object.values(p.contrib).map(Math.abs));
+  const P = probsOf(p), pick = bestPick(P);
+  const verdict = pick === 'X' ? 'המדדים מתקזזים, ולכן הניחוש הוא תיקו.' : `רוב המשקל נוטה ל${esc(pick === '1' ? H : A)}.`;
+  return `<div class="panel">
+    <h3>איך נקבע הניחוש</h3>
+    <p class="note">חמישה מדדים, כל אחד במשקל שנקבע לפי הדיוק שלו על אלפי משחקי עבר. הפס מראה לאיזו קבוצה המדד נותן יתרון ובכמה.</p>
+    <div class="factors">
+      <div class="f-head"><span>${esc(H)}</span><span></span><span>${esc(A)}</span></div>
+      ${rows.map(([k, vh, va]) => {
+        const c = p.contrib[k] || 0, w = Math.min(50, Math.abs(c) / max * 50);
+        return `<div class="f-row">
+          <div class="f-name">${FACTOR_NAMES[k]}</div>
+          <div class="f-vals"><span>${vh}</span><div class="fbar" aria-hidden="true"><i class="${c >= 0 ? 'h' : 'a'}" style="${c >= 0 ? 'left' : 'right'}:50%;width:${w.toFixed(1)}%"></i></div><span>${va}</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <p><b>${verdict}</b> סיכויים סופיים: ${esc(H)} ${pct(P['1'])} · תיקו ${pct(P['X'])} · ${esc(A)} ${pct(P['2'])}.</p>
+  </div>`;
 }
 
 function probBar(P) {
@@ -395,6 +440,8 @@ function openMatch(code, h, a, m) {
       ${staleInfo(code) ? `<p class="note"><b>נתוני הליגה הזו מעודכנים רק עד ${staleInfo(code).split('-').reverse().join('.')}.</b> התחזית מבוססת על הכוח של הקבוצות אז, ולא על העונה הנוכחית. בדוק כושר עדכני לפני שאתה סומך עליה.</p>` : ''}
       ${p.reliability < 6 ? '<p class="note">שים לב: לאחת הקבוצות מעט משחקים בנתונים (קבוצה עולה או ליגה חדשה במערכת). התחזית פחות אמינה.</p>' : ''}
     </div>` : '<div class="panel"><p>אין מספיק נתונים לליגה הזו לתחזית סטטיסטית.</p></div>'}
+
+    ${P ? factorPanel(p, H, A, ph, pa) : ''}
 
     <div class="panel">
       <h3>ניתוח</h3>
@@ -553,8 +600,8 @@ function renderInfo() {
     </div>
     <div class="panel">
       <h3>איך עובדת התחזית</h3>
-      <p>לכל ליגה המערכת מחשבת מדד התקפה ומדד הגנה לכל קבוצה מתוך התוצאות של 3 השנים האחרונות. משחקים חדשים שוקלים יותר (מחצית משקל כל 8 חודשים). מזה נגזר מספר השערים הצפוי לכל צד (כולל יתרון ביתיות של אותה ליגה), ומודל פואסון עם תיקון דיקסון-קולס נותן הסתברות לכל תוצאה, ל־1/X/2, למעל 2.5 ולשתי הקבוצות יבקיעו. כשיש לפחות 4 מפגשים ב־8 השנים האחרונות, ראש בראש מזיז את התחזית עד 15%.</p>
-      <p>בבדיקה לאחור על עונות 2023–2025 בחמש הליגות הגדולות (3,484 משחקים, בכל משחק רק עם מידע שהיה ידוע לפניו): הניחוש הבודד המומלץ צדק ב־51%–55% מהמשחקים, וכפול מומלץ ב־78%–80%. ניחוש אקראי צודק ב־33%.</p>
+      <p>לכל משחק המערכת מחשבת חמישה מדדים: <b>כוח</b> (מדד התקפה והגנה מ־3 השנים האחרונות, כשמשחקים חדשים שוקלים יותר), <b>מצב בטבלה</b> (נקודות למשחק העונה), <b>כושר</b> (6 משחקים אחרונים), <b>בית/חוץ</b> (מאזן קבוצת הבית בבית מול מאזן האורחת בחוץ) ו<b>ראש בראש</b> (10 המפגשים האחרונים). כל מדד מקבל משקל, והסכום הופך לסיכויים ל־1, X ו־2. התוצאה משולבת עם מודל פואסון של שערים, שנותן גם צפי שערים ותוצאות סבירות.</p>
+      <p>המשקלים לא נקבעו לפי תחושה. הם חושבו על 9,349 משחקים מהעונות 2022–2025 ונבדקו על 4,634 משחקים מעונת 2025–26 שהמודל לא ראה. המשקל הגדול ביותר הוא לכוח הקבוצות, אחריו ראש בראש, מצב בטבלה ובית/חוץ. הכושר האחרון מוסיף מעט מאוד, כי הוא כבר כלול בכוח. בבדיקה: הניחוש הבודד צדק ב־51% מהמשחקים, וכפול ב־78% (ניחוש אקראי: 33% ו־67%).</p>
     </div>
     <div class="panel">
       <h3>בניית הטופס</h3>
@@ -649,7 +696,7 @@ async function refreshAll(force) {
   if (refreshing) return; refreshing = true;
   if (force) resetEspn();
   setStatus();
-  const codes = PRIORITY.filter(c => c !== 'isr.1' && DB.leagues[c]);
+  const codes = PRIORITY.filter(c => !c.startsWith('isr') && DB.leagues[c]);
   let i = 0;
   const worker = async () => { while (i < codes.length) { const c = codes[i++]; try { await refreshLeague(c, force); } catch (e) { /* noted in DB.live */ } } };
   await Promise.all([worker(), worker(), worker()]);

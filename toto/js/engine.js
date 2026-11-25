@@ -4,6 +4,7 @@
 const LEAGUES = {
   // code: [Hebrew name, ESPN slug, bundled history available]
   'isr.1': ['ליגת העל (ישראל)', 'isr.1', false],
+  'isr.2': ['ליגה לאומית (ישראל)', 'isr.2', false],
   'en.1': ['פרמייר ליג (אנגליה)', 'eng.1', true],
   'en.2': ["צ'מפיונשיפ (אנגליה)", 'eng.2', true],
   'es.1': ['לה ליגה (ספרד)', 'esp.1', true],
@@ -264,24 +265,70 @@ function summarizeMatrix(M) {
   return { p1, px, p2, o25, btts, top: scores.slice(0, 6) };
 }
 
+// ---------- Factor model: five explainable factors combined by an ordered logit ----------
+// Each factor is a "home minus away" difference; positive favours the home team.
+const FACTOR_NAMES = {
+  str: 'כוח התקפה והגנה (3 שנים, משוקלל זמן)',
+  table: 'מצב בטבלה (נקודות למשחק העונה)',
+  form: 'כושר: 6 משחקים אחרונים',
+  venue: 'בית / חוץ: מאזן בבית מול מאזן בחוץ',
+  h2h: 'ראש בראש: 10 המפגשים האחרונים',
+};
+// Fitted by tools/fit_factors.js on past seasons (see the "מידע" tab for the backtest).
+let FW = {"w":{"str":1.084,"table":0.092,"form":0.042,"venue":0.09,"h2h":0.234},"t1":-0.651,"t2":0.555,"mix":0.3};
+
+function ppg(s) { return s && s.n ? s.pts / s.n : null; }
+
+function factorsFor(code, h, a, asOf) {
+  const L = DB.leagues[code];
+  asOf = asOf || todayISO();
+  const F = fitLeague(L, asOf);
+  const lh = F.baseH * F.att[h] * F.def[a], la = F.baseA * F.att[a] * F.def[h];
+  const sh = teamStats(L, h, asOf), sa = teamStats(L, a, asOf);
+  const ms = L.m.filter(x => x.hg != null && x.d < asOf && ((x.h === h && x.a === a) || (x.h === a && x.a === h)) && x.d >= addDays(asOf, -10 * 365)).slice(-10);
+  let hw = 0, hl = 0, hd = 0;
+  for (const x of ms) { const r = resultFor(x, h).r; if (r === 'W') hw++; else if (r === 'L') hl++; else hd++; }
+  const f6 = (s) => {
+    const last = s.form.slice(0, 6);
+    return last.length ? last.reduce((t, x) => t + (x.r === 'W' ? 3 : x.r === 'D' ? 1 : 0), 0) / last.length : null;
+  };
+  const diff = (x, y) => (x == null || y == null ? 0 : x - y);
+  return {
+    lh, la, sh, sa, F,
+    h2hRec: { n: ms.length, w: hw, d: hd, l: hl },
+    d: {
+      str: Math.log(lh / la),
+      table: diff(ppg(sh.all), ppg(sa.all)),
+      form: diff(f6(sh), f6(sa)),
+      venue: diff(ppg(sh.home), ppg(sa.away)),
+      h2h: ms.length ? (hw - hl) / (ms.length + 3) : 0,
+    },
+  };
+}
+
+const sig = x => 1 / (1 + Math.exp(-x));
+function orderedLogit(d, P) {
+  P = P || FW;
+  let S = 0;
+  for (const k in P.w) S += P.w[k] * (d[k] || 0);
+  const p2 = sig(P.t1 - S), notHome = sig(P.t2 - S);
+  return { p1: 1 - notHome, px: Math.max(notHome - p2, 0.02), p2, S };
+}
+
 function predict(code, h, a, asOf) {
   const L = DB.leagues[code];
-  const F = fitLeague(L, asOf);
-  const lh = F.baseH * F.att[h] * F.def[a];
-  const la = F.baseA * F.att[a] * F.def[h];
+  const fx = factorsFor(code, h, a, asOf);
+  const { lh, la, F } = fx;
   const S = summarizeMatrix(scoreMatrix(lh, la));
-  let { p1, px, p2 } = S;
-  // Head-to-head nudge (small, only with enough recent meetings).
-  const hh = h2h(L, h, a, asOf).recent;
-  let hw = 0;
-  if (hh.n >= 4) {
-    hw = Math.min(0.15, hh.n * 0.02);
-    p1 = (1 - hw) * p1 + hw * hh.w / hh.n;
-    px = (1 - hw) * px + hw * hh.d / hh.n;
-    p2 = (1 - hw) * p2 + hw * hh.l / hh.n;
-  }
+  const ol = orderedLogit(fx.d);
+  const m = FW.mix; // share of the Poisson model in the final probability
+  let p1 = m * S.p1 + (1 - m) * ol.p1, px = m * S.px + (1 - m) * ol.px, p2 = m * S.p2 + (1 - m) * ol.p2;
+  const z = p1 + px + p2; p1 /= z; px /= z; p2 /= z;
+  // Contribution of each factor to the latent score (positive = home side).
+  const contrib = {};
+  for (const k in FW.w) contrib[k] = FW.w[k] * (fx.d[k] || 0);
   const reliability = Math.min(F.games[h], F.games[a]);
-  return { ...S, p1, px, p2, lh, la, h2hWeight: hw, reliability, nMatches: F.nMatches };
+  return { ...S, p1, px, p2, lh, la, poisson: { p1: S.p1, px: S.px, p2: S.p2 }, factors: fx.d, contrib, h2hRec: fx.h2hRec, sh: fx.sh, sa: fx.sa, reliability, nMatches: F.nMatches };
 }
 
 function probsOf(p) { return { '1': p.p1, 'X': p.px, '2': p.p2 }; }

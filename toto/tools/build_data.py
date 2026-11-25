@@ -144,6 +144,54 @@ for code, slug in ESPN_SLUG.items():
     done = [r for r in rows if r[4] is not None]
     print(f"espn {code}: {len(rows)} events, last result {done[-1][0] if done else '-'}", file=sys.stderr)
 
+# ---- TheSportsDB: Israeli leagues (current seasons; free test key returns one round per call) ----
+import time
+TSDB = "https://www.thesportsdb.com/api/v1/json/123"
+TSDB_LEAGUES = {"isr.1": ("4644", "ליגת העל (ישראל)"), "isr.2": ("4966", "ליגה לאומית (ישראל)")}
+
+def tsdb(path):
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(f"{TSDB}/{path}", timeout=30) as r:
+                return json.load(r)
+        except Exception as e:
+            time.sleep(4 + attempt * 6)
+    return {}
+
+for code, (lid, name) in TSDB_LEAGUES.items():
+    rows, seen = [], set()
+    cy = datetime.date.today().year if datetime.date.today().month >= 7 else datetime.date.today().year - 1
+    for season in (f"{cy-1}-{cy}", f"{cy}-{cy+1}"):
+        empty = 0
+        for rnd in range(1, 45):
+            evs = (tsdb(f"eventsround.php?id={lid}&r={rnd}&s={season}") or {}).get("events") or []
+            time.sleep(1.2)
+            if not evs:
+                empty += 1
+                if empty >= 2: break
+                continue
+            empty = 0
+            for e in evs:
+                if not e.get("dateEvent") or not e.get("strHomeTeam"): continue
+                hs, as_ = e.get("intHomeScore"), e.get("intAwayScore")
+                done = hs not in (None, "") and as_ not in (None, "") and (e.get("strStatus") or "Match Finished") not in ("Postponed", "Cancelled", "Not Started")
+                t = (e.get("strTime") or "")[:5]
+                # TheSportsDB times are UTC
+                try:
+                    dt = datetime.datetime.fromisoformat(f"{e['dateEvent']}T{t or '12:00'}:00+00:00").astimezone(IL)
+                    d, tl = dt.strftime("%Y-%m-%d"), (dt.strftime("%H:%M") if t else "")
+                except Exception:
+                    d, tl = e["dateEvent"], t
+                k = (d, e["strHomeTeam"], e["strAwayTeam"])
+                if k in seen: continue
+                seen.add(k)
+                rows.append([d, tl, e["strHomeTeam"], e["strAwayTeam"], int(hs) if done else None, int(as_) if done else None])
+    if code not in out["leagues"]:
+        out["leagues"][code] = {"name": name, "teams": [], "m": []}
+    out["leagues"][code].setdefault("espn", []).extend(rows)
+    done = [r for r in rows if r[4] is not None]
+    print(f"tsdb {code}: {len(rows)} events, last result {max(r[0] for r in done) if done else '-'}", file=sys.stderr)
+
 dst = os.path.join(os.path.dirname(__file__), "..", "data", "history.json")
 with open(dst, "w") as f:
     json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
