@@ -59,6 +59,8 @@ function confMeter(p) {
   const n = confLevel(p), label = ['', 'פתוח מאוד', 'פתוח', 'נטייה', 'ביטחון טוב', 'ביטחון גבוה'][n];
   return `<span class="conf" title="רמת ביטחון">${label}<i>${[1, 2, 3, 4, 5].map(i => `<b class="${i <= n ? 'on' : ''}"></b>`).join('')}</i></span>`;
 }
+// Score with the home team's goals on the right, next to the home team (RTL layout).
+function SC(h, a) { return `<span class="sc" dir="ltr">${a}:${h}</span>`; }
 // Match status for colouring: final result, live score (ESPN, in progress) or not started.
 function matchStatus(m) {
   if (!m) return { s: 'none' };
@@ -69,7 +71,7 @@ function matchStatus(m) {
 function statusTag(st, picks) {
   if (st.s !== 'done' && st.s !== 'live') return '';
   const ok = picks.includes(st.o);
-  const sc = `<span dir="ltr">${st.hg}:${st.ag}</span>`;
+  const sc = `${SC(st.hg, st.ag)}`;
   return st.s === 'done'
     ? `<span class="tag ${ok ? 'hit' : 'miss'}">${sc} · ${ok ? 'פגיעה' : 'החטאה'}</span>`
     : `<span class="tag live ${ok ? 'hit' : 'miss'}"><i class="pulse"></i>חי ${esc(st.clock || '')} · ${sc} · ${ok ? 'כרגע פוגע' : 'כרגע מחטיא'}</span>`;
@@ -267,7 +269,7 @@ function renderHome() {
           <div class="kpi"><b>${lw.n}</b><span>משחקים שנבדקו</span></div>
         </div>
         <h3>ההפתעות הגדולות</h3>
-        <div class="plist">${surprises.map(r => `<div class="prow"><div><div class="t">${esc(teamHe(r.code, r.hk))} ${r.hg}:${r.ag} ${esc(teamHe(r.code, r.ak))}</div><div class="m">${esc(leagueName(r.code))} · המערכת נתנה ${r.pick} ב־${pct(r.conf)}</div></div><div class="r"><span class="hitmark no">✕</span></div></div>`).join('') || '<p class="note">לא היו הפתעות גדולות.</p>'}</div>` : '<p class="note">אין עדיין תוצאות מהשבוע האחרון בנתונים.</p>'}
+        <div class="plist">${surprises.map(r => `<div class="prow"><div><div class="t">${esc(teamHe(r.code, r.hk))} ${SC(r.hg, r.ag)} ${esc(teamHe(r.code, r.ak))}</div><div class="m">${esc(leagueName(r.code))} · המערכת נתנה ${r.pick} ב־${pct(r.conf)}</div></div><div class="r"><span class="hitmark no">✕</span></div></div>`).join('') || '<p class="note">לא היו הפתעות גדולות.</p>'}</div>` : '<p class="note">אין עדיין תוצאות מהשבוע האחרון בנתונים.</p>'}
       </div>
       <div class="panel">
         <div class="section-title"><h2>מה המערכת למדה</h2><button class="linkbtn" data-go="track">פירוט</button></div>
@@ -707,7 +709,7 @@ function card(code, m, inForm) {
     <div class="lg"><span>${esc(leagueName(code))} ${staleTag(code)}</span><span>${m.hg == null ? (m.t || '') : (pk ? `<span class="hitmark ${pk === res ? 'ok' : 'no'}">${pk === res ? '✓' : '✕'}</span>` : '')}</span></div>
     <div class="vs" data-match="${code}|${L.m.indexOf(m)}">
       <div class="team">${badge(H.he, H.key)}<b>${esc(H.he)}</b></div>
-      <span class="mid${st.s === 'done' || st.s === 'live' ? ' score' : ''}">${st.s === 'done' || st.s === 'live' ? `<span dir="ltr">${st.hg}:${st.ag}</span>${st.s === 'live' ? `<small class="live-clock"><i class="pulse"></i>${esc(st.clock || 'חי')}</small>` : ''}` : 'נגד'}</span>
+      <span class="mid${st.s === 'done' || st.s === 'live' ? ' score' : ''}">${st.s === 'done' || st.s === 'live' ? `${SC(st.hg, st.ag)}${st.s === 'live' ? `<small class="live-clock"><i class="pulse"></i>${esc(st.clock || 'חי')}</small>` : ''}` : 'נגד'}</span>
       <div class="team">${badge(A.he, A.key)}<b>${esc(A.he)}</b></div>
     </div>
     ${P ? probBar(P) + reasonLine(p, H.he, A.he) : '<div class="note">אין מספיק נתונים לתחזית</div>'}
@@ -743,7 +745,7 @@ function openMatch(code, h, a, m) {
   openSheet(`
     <div class="m-head">
       <div>${badge(H, L.teams[h].key, true)}<h2>${esc(H)}</h2><div class="pos">${ph ? `מקום ${ph.pos} · ${ph.pts} נק׳` : ''}</div></div>
-      <div><span class="mid">${m && m.hg != null ? `${m.hg}:${m.ag}` : 'נגד'}</span><span class="mnote">${esc(leagueName(code))}<br>${m ? fmtDate(m.d, m.t) : ''}</span></div>
+      <div><span class="mid">${m && m.hg != null ? `${SC(m.hg, m.ag)}` : 'נגד'}</span><span class="mnote">${esc(leagueName(code))}<br>${m ? fmtDate(m.d, m.t) : ''}</span></div>
       <div>${badge(A, L.teams[a].key, true)}<h2>${esc(A)}</h2><div class="pos">${pa ? `מקום ${pa.pos} · ${pa.pts} נק׳` : ''}</div></div>
     </div>
     ${P ? `<div class="panel">
@@ -767,7 +769,7 @@ function openMatch(code, h, a, m) {
       <h3>ראש בראש${hh.since ? ` · מאז ${+hh.since.slice(0, 4)}` : ''}</h3>
       ${hh.all.n ? `<div class="h2h-big"><div class="w"><b>${hh.all.w}</b><span>ניצחונות ${esc(H)}</span></div><div class="d"><b>${hh.all.d}</b><span>תיקו</span></div><div class="l"><b>${hh.all.l}</b><span>ניצחונות ${esc(A)}</span></div></div>
       <div class="stats"><div class="stat"><b>${hh.all.n}</b><span>מפגשים</span></div><div class="stat"><b>${hh.all.gf}:${hh.all.ga}</b><span>שערים</span></div><div class="stat"><b>${fx((hh.all.gf + hh.all.ga) / hh.all.n, 2)}</b><span>שערים למשחק</span></div><div class="stat"><b>${pct(hh.all.o25 / hh.all.n)}</b><span>מעל 2.5</span></div><div class="stat"><b>${hh.venue.w}-${hh.venue.d}-${hh.venue.l}</b><span>כש${esc(H)} בבית</span></div></div>
-      <div class="tbl-wrap"><table><thead><tr><th>תאריך</th><th>בית</th><th class="c">תוצאה</th><th>חוץ</th></tr></thead><tbody>${hh.list.slice(0, 15).map(x => `<tr><td class="num">${x.d.split('-').reverse().join('.')}</td><td>${esc(L.teams[x.h].he)}</td><td class="num c">${x.hg}:${x.ag}</td><td>${esc(L.teams[x.a].he)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="note">לא נמצאו מפגשים קודמים בליגה הזו בנתונים.</p>'}
+      <div class="tbl-wrap"><table><thead><tr><th>תאריך</th><th>בית</th><th class="c">תוצאה</th><th>חוץ</th></tr></thead><tbody>${hh.list.slice(0, 15).map(x => `<tr><td class="num">${x.d.split('-').reverse().join('.')}</td><td>${esc(L.teams[x.h].he)}</td><td class="num c">${SC(x.hg, x.ag)}</td><td>${esc(L.teams[x.a].he)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="note">לא נמצאו מפגשים קודמים בליגה הזו בנתונים.</p>'}
     </div>
     <div class="panel"><h3>השוואה</h3><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="c">${esc(H)}</th><th class="c"></th><th class="c">${esc(A)}</th></tr></thead><tbody>
       ${cmp('מקום בטבלה', ph ? ph.pos : '–', pa ? pa.pos : '–')}
@@ -817,7 +819,7 @@ function analysis(H, A, P, p, sh, sa, hh, ph, pa, L) {
     out.push(`בכל המפגשים בנתונים: ${hh.all.w} ניצחונות ל${esc(H)}, ${hh.all.d} תיקו, ${hh.all.l} ניצחונות ל${esc(A)}.`);
     if (hh.all.o25 / hh.all.n >= 0.65) out.push(`מפגשים עתירי שערים: ${pct(hh.all.o25 / hh.all.n)} הסתיימו מעל 2.5.`);
     const last = hh.list[0];
-    out.push(`המפגש האחרון (${last.d.split('-').reverse().join('.')}): ${esc(L.teams[last.h].he)} ${last.hg}:${last.ag} ${esc(L.teams[last.a].he)}.`);
+    out.push(`המפגש האחרון (${last.d.split('-').reverse().join('.')}): ${esc(L.teams[last.h].he)} ${SC(last.hg, last.ag)} ${esc(L.teams[last.a].he)}.`);
   } else out.push('אין מספיק מפגשים קודמים בין הקבוצות כדי להסיק מגמה.');
   return out;
 }
@@ -921,10 +923,10 @@ async function renderTrack() {
     <div class="grid2">
       <div class="panel"><h3>ההפתעות הגדולות, 30 יום אחרונים</h3>
         <p class="note">משחקים שבהם המערכת הייתה בטוחה ובכל זאת טעתה.</p>
-        <div class="plist">${surprises.map(r => `<div class="prow"><div><div class="t">${esc(teamHe(r.code, r.hk))} ${r.hg}:${r.ag} ${esc(teamHe(r.code, r.ak))}</div><div class="m">${esc(leagueName(r.code))} · ${dmy(r.d)} · ניחוש ${r.pick} ב־${pct(r.conf)}</div></div><div class="r"><span class="hitmark no">✕</span></div></div>`).join('') || '<p class="note">אין.</p>'}</div></div>
+        <div class="plist">${surprises.map(r => `<div class="prow"><div><div class="t">${esc(teamHe(r.code, r.hk))} ${SC(r.hg, r.ag)} ${esc(teamHe(r.code, r.ak))}</div><div class="m">${esc(leagueName(r.code))} · ${dmy(r.d)} · ניחוש ${r.pick} ב־${pct(r.conf)}</div></div><div class="r"><span class="hitmark no">✕</span></div></div>`).join('') || '<p class="note">אין.</p>'}</div></div>
       <div class="panel"><div class="section-title"><h3>תוצאות אחרונות</h3>
         <label class="field inline"><select id="tr-league"><option value="">כל הליגות</option>${codes.map(c => `<option value="${c}"${c === lg ? ' selected' : ''}>${esc(leagueName(c))}</option>`).join('')}</select></label></div>
-        <div class="plist">${recent.map(r => `<div class="prow"><div><div class="t">${esc(teamHe(r.code, r.hk))} ${r.hg}:${r.ag} ${esc(teamHe(r.code, r.ak))}</div><div class="m">${esc(leagueName(r.code))} · ${dmy(r.d)} · ${oddsLine(r.P)}</div></div><div class="r"><span class="pick">${r.pick}</span><span class="hitmark ${r.hit ? 'ok' : 'no'}">${r.hit ? '✓' : '✕'}</span></div></div>`).join('')}</div></div>
+        <div class="plist">${recent.map(r => `<div class="prow"><div><div class="t">${esc(teamHe(r.code, r.hk))} ${SC(r.hg, r.ag)} ${esc(teamHe(r.code, r.ak))}</div><div class="m">${esc(leagueName(r.code))} · ${dmy(r.d)} · ${oddsLine(r.P)}</div></div><div class="r"><span class="pick">${r.pick}</span><span class="hitmark ${r.hit ? 'ok' : 'no'}">${r.hit ? '✓' : '✕'}</span></div></div>`).join('')}</div></div>
     </div>`;
   const sel = $('#tr-league'); if (sel) sel.onchange = e => { S.trackLeague = e.target.value; save(); renderTrack(); };
   // frozen weeks
@@ -945,7 +947,7 @@ async function openFrozen(f) {
   const done = sc.filter(g => g.res), hits = done.filter(g => g.hit).length;
   openSheet(`<div class="panel"><h2>ניחושים נעולים · שבוע ${dmy(fz.week)}</h2>
     <p class="note">ננעל ב־${dmy(fz.made)}. ${done.length ? `פגיעה: ${hits} מתוך ${done.length} (${pct(hits / done.length)}).` : 'המשחקים עוד לא שוחקו.'}</p>
-    <div class="plist">${sc.map(g => `<div class="prow"><div><div class="t">${esc(g.hn)} ${g.res ? `${g.m.hg}:${g.m.ag}` : '–'} ${esc(g.an)}</div><div class="m">${esc(leagueName(g.code))} · ${dmy(g.d)} · ${oddsLine(g.P)}</div></div>
+    <div class="plist">${sc.map(g => `<div class="prow"><div><div class="t">${esc(g.hn)} ${g.res ? `${SC(g.m.hg, g.m.ag)}` : '–'} ${esc(g.an)}</div><div class="m">${esc(leagueName(g.code))} · ${dmy(g.d)} · ${oddsLine(g.P)}</div></div>
       <div class="r"><span class="pick">${g.pick}</span>${g.res ? `<span class="hitmark ${g.hit ? 'ok' : 'no'}">${g.hit ? '✓' : '✕'}</span>` : ''}</div></div>`).join('')}</div></div>`);
 }
 
@@ -1111,8 +1113,8 @@ async function loadExtras() {
   setStatus();
   const h = location.hash.slice(1);
   go(VIEWS.includes(h) ? h : (S.tab || 'home'), false);
-  refreshAll(false).then(pollLive);
-  setInterval(pollLive, 60000);
+  refreshAll(false);
+  if (typeof bindLiveDock === 'function') bindLiveDock(); // live football + basketball dock (also feeds the form colours)
 })();
 
 // Live scores: every minute while the page is open, for today's games (ESPN leagues).
