@@ -203,9 +203,14 @@ const UNIT_CFG = {
   tank:     { file: 'tank', size: 0.72, yaw: Math.PI, tint: 0.55, anim: { move: 'Tank_Forward' }, ring: 1.5 },
   art:      { file: 'art', size: 0.74, yaw: Math.PI, tint: 0.5, anim: { move: 'Tank_Forward' }, ring: 1.5 },
   aa:       { file: 'aa', size: 0.46, yaw: 0, tint: 0.45, ring: 1.2 },
-  _drone:   { file: 'heli', size: 0.46, yaw: Math.PI / 2, tint: 0.45, air: 1.1, anim: { idle: 'Idle', shoot: 'Shoot', die: 'Dead' }, ring: 1 },
+  drone:    { file: 'heli', size: 0.34, yaw: Math.PI / 2, tint: 0.45, air: 1.0, anim: { idle: 'Idle', shoot: 'Shoot', die: 'Dead' }, ring: 1 },
   jet:      { file: 'jet', size: 0.72, yaw: Math.PI / 2, tint: 0.4, air: 1.8, ring: 1.2 },
-  mech:     { file: 'mech', size: 0.62, axis: 'h', yaw: -Math.PI / 2, tint: 0.35, anim: { idle: 'Idle', move: 'Walk', shoot: 'Shoot', die: 'Death' }, ring: 1.5 }
+  mech:     { file: 'mech', size: 0.62, axis: 'h', yaw: -Math.PI / 2, tint: 0.35, anim: { idle: 'Idle', move: 'Walk', shoot: 'Shoot', die: 'Death' }, ring: 1.5 },
+  rpg:      { file: 'inf', size: 0.3, axis: 'h', yaw: -Math.PI / 2, tint: 0.5, pose: true, squad: [[0.02, 0.08], [-0.12, -0.1]], ring: 1 },
+  sniper:   { file: 'commando', size: 0.31, axis: 'h', yaw: -Math.PI / 2, tint: 0.15, pose: true, squad: [[0, 0]], ring: 0.8 },
+  apc:      { file: 'apc', size: 0.66, yaw: Math.PI, tint: 0.5, anim: { move: 'Tank_Forward' }, ring: 1.4 },
+  mlrs:     { file: 'mlrs', size: 0.72, yaw: Math.PI, tint: 0.5, anim: { move: 'Tank_Forward' }, ring: 1.5 },
+  bomber:   { file: 'bomber', size: 0.95, yaw: Math.PI / 2, tint: 0.35, air: 2.1, ring: 1.5 }
 };
 const BUILDINGS = ['b_building1_small', 'b_building2_large', 'b_building2_small', 'b_building3_big', 'b_building3_small', 'b_building4', 'b_house2', 'b_building1_large', 'b_house1', 'b_4story', 'b_6story_stack'];
 const SCENERY = ['palm1', 'palm2', 'pine1', 'pine2', 'tree1', 'tree2', 'cactus1', 'cactus2', 'deadtree', 'mountain1', 'mountain2', 'gold', 'ship', 'boat', 'b_antenna_1', ...BUILDINGS];
@@ -299,6 +304,7 @@ function fromAsset(type, color) {
   return root;
 }
 
+BUILD.rpg = BUILD.inf; BUILD.sniper = BUILD.commando; BUILD.apc = BUILD.tank; BUILD.mlrs = BUILD.art; BUILD.drone = BUILD.heli; BUILD.bomber = BUILD.jet;
 const PROTO = {};
 function makeUnit(type, color) {
   if (ASSETS.ready && ASSETS.units[type]) return fromAsset(type, color);

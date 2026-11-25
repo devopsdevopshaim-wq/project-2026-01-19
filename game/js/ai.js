@@ -34,6 +34,17 @@ G.AI = {
         G.act.build(m, fi, hot, 'fort');
     }
     const interior = own().filter(t => !frontier.includes(t));
+    // ---- production & economy buildings ----
+    const has = k => own().some(t => m.terr[t].b && m.terr[t].b[k]);
+    const bFront = frontier.length ? frontier.slice().sort((a, b) => threat[b] - threat[a]) : own();
+    const tryBuild = (list, kind) => { for (const t of list) if (G.act.build(m, fi, t, kind)) return true; return false; };
+    if (!bFront.slice(0, 3).some(t => m.terr[t].b && m.terr[t].b.barracks) && f.credits > 260) tryBuild(bFront.slice(0, 3), 'barracks');
+    if (!has('warfactory') && f.credits > 420) tryBuild(bFront.concat(interior), 'warfactory');
+    if (tier.some(t => G.UNIT_BUILDING[t] === 'airbase') && !has('airbase') && f.credits > 650) tryBuild(interior.concat(bFront), 'airbase');
+    if (f.credits > 380 && Math.random() < 0.45) {
+      const kind = Math.random() < 0.5 ? 'factory' : Math.random() < 0.6 ? 'house' : 'office';
+      tryBuild((interior.length ? interior : own()).slice().sort(() => Math.random() - 0.5), kind);
+    }
     if (f.credits > 450 && Math.random() < 0.5) {
       const c = (interior.length ? interior : own()).filter(t => m.terr[t].mine < 2);
       if (c.length) G.act.build(m, fi, c[Math.floor(Math.random() * c.length)], 'mine');
@@ -42,7 +53,7 @@ G.AI = {
     // ---- recruit ----
     const budgetFrac = { aggressive: 1, balanced: 0.9, turtle: 0.8 }[pers] || 0.9;
     let budget = f.credits * budgetFrac;
-    const enemyAir = frontier.some(t => terrs[t].adj.some(a => { const u = m.terr[a].units; return enemyOf(m.terr[a].owner) && ((u.heli || 0) + (u.jet || 0)) > 0; }));
+    const enemyAir = frontier.some(t => terrs[t].adj.some(a => { const u = m.terr[a].units; return enemyOf(m.terr[a].owner) && ((u.heli || 0) + (u.jet || 0) + (u.drone || 0) + (u.bomber || 0)) > 0; }));
     const place = (frontier.length ? frontier : own()).slice().sort((a, b) => (threat[b] - myP(b)) - (threat[a] - myP(a)));
     const spots = place.slice(0, Math.min(3, place.length));
     let si = 0, guard = 0;
@@ -56,7 +67,11 @@ G.AI = {
       else if (r < 0.75) type = affordable[Math.floor(Math.random() * affordable.length)];
       else type = 'inf';
       if (!type) break;
-      if (G.act.recruit(m, fi, spots[si % spots.length], type, 1)) budget -= G.UNITS[type].cost;
+      // recruit where the right production building exists, preferring the front
+      const ok = t => G.canRecruitAt(m.terr[t], type);
+      const at = ok(spots[si % spots.length]) ? spots[si % spots.length] : (place.find(ok) ?? own().find(ok));
+      if (at !== undefined && G.act.recruit(m, fi, at, type, 1)) budget -= G.UNITS[type].cost;
+      else if (!own().some(t => G.canRecruitAt(m.terr[t], 'inf'))) break;
       si++;
     }
 

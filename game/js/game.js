@@ -38,7 +38,7 @@ G.meta = {
   playerUnits(world = 0) {
     // research unlocks + technology captured from previously conquered worlds
     const u = ['inf', 'tank'].concat(G.WORLDS[Math.max(0, world - 1)].tier);
-    const map = { u_commando: 'commando', u_art: 'art', u_aa: 'aa', u_heli: 'heli', u_jet: 'jet', u_mech: 'mech' };
+    const map = { u_commando: 'commando', u_art: 'art', u_aa: 'aa', u_heli: 'heli', u_jet: 'jet', u_mech: 'mech', u_rpg: 'rpg', u_apc: 'apc', u_sniper: 'sniper', u_drone: 'drone', u_mlrs: 'mlrs', u_bomber: 'bomber' };
     for (const k in map) if (this.has(k)) u.push(map[k]);
     return G.UNIT_ORDER.filter(x => u.includes(x));
   }
@@ -63,6 +63,9 @@ G.bfsDist = function (m, sources, passable) {
   return d;
 };
 
+G.slotsUsed = st => Object.values(st.b || {}).reduce((a, b) => a + b, 0);
+G.buildingCost = (kind, lvl, fi) => Math.round(G.BUILDINGS[kind].cost[lvl] * (fi === 0 && G.meta.has('mine1') && (kind === 'factory' || kind === 'house') ? 0.8 : 1));
+G.canRecruitAt = (st, type) => !!(st.b && st.b[G.UNIT_BUILDING[type]]);
 G.fortCost = (lvl, fi) => Math.round([100, 180, 280, 400][lvl] * (fi === 0 && G.meta.has('fort1') ? 0.7 : 1));
 G.mineCost = (lvl, fi) => Math.round([120, 210, 320][lvl] * (fi === 0 && G.meta.has('mine1') ? 0.7 : 1));
 G.maxFort = fi => (fi === 0 && G.meta.has('fort1')) ? 4 : 3;
@@ -74,6 +77,7 @@ G.incomeOf = function (m, fi) {
     const st = m.terr[T.id];
     if (st.owner !== fi) continue;
     inc += G.TTYPES[T.type].inc + st.mine * mineV;
+    if (st.b) for (const k in st.b) inc += (G.BUILDINGS[k] ? G.BUILDINGS[k].inc : 0) * st.b[k];
   }
   if (m.mode === 'world') for (const C of G.map.countries) if (C.tids.every(t => m.terr[t].owner === fi)) inc += C.bonus;
   if (fi === 0) inc *= 1 + (G.meta.has('eco3') ? 0.35 : G.meta.has('eco2') ? 0.2 : G.meta.has('eco1') ? 0.1 : 0);
@@ -94,12 +98,12 @@ G.newMatch = function (world, country, diff) {
   while (nAI > 1 && active.length < nAI * 2 + 4) nAI--;
 
   const aiPool = G.AI_FACTIONS.map((f, i) => G.AI_FACTIONS[(i + world * 2 + (country || 0)) % G.AI_FACTIONS.length]);
-  const factions = [{ ...G.PLAYER_FACTION, ai: false, credits: 300 + world * 120 + (G.meta.has('cash2') ? 300 : G.meta.has('cash1') ? 150 : 0), alive: true, capital: -1 }];
+  const factions = [{ ...G.PLAYER_FACTION, ai: false, credits: 420 + world * 120 + (G.meta.has('cash2') ? 300 : G.meta.has('cash1') ? 150 : 0), alive: true, capital: -1 }];
   for (let i = 0; i < nAI; i++) factions.push({ ...aiPool[i], ai: true, credits: Math.round(220 * wd.aiStart), alive: true, capital: -1 });
 
   const m = {
-    v: 1, mode, world, country, diff, turn: 1, factions,
-    terr: map.terrs.map(T => ({ owner: actSet.has(T.id) ? -1 : -2, units: {}, tired: {}, fort: 0, mine: 0 })),
+    v: 2, mode, world, country, diff, turn: 1, factions, officePts: 0,
+    terr: map.terrs.map(T => ({ owner: actSet.has(T.id) ? -1 : -2, units: {}, tired: {}, fort: 0, mine: 0, b: {} })),
     cd: { strike: 0, reinf: 0, shield: 0, emp: 0 },
     shields: {}, stats: { captured: 0, battlesWon: 0, battlesLost: 0, built: 0, lostTerr: 0, recruited: 0 },
     objectives: [], over: false, startTime: Date.now()
@@ -128,10 +132,11 @@ G.newMatch = function (world, country, diff) {
     const free = map.terrs[s].adj.filter(a => m.terr[a].owner === -1 && !starts.includes(a));
     const extra = R.shuffle(free).slice(0, fi === 0 ? 1 : (mode === 'world' ? 2 : 1));
     if (fi === 0) {
+      m.terr[s].b = { barracks: 1, warfactory: 1, house: 1 };
       const cap = { inf: 4 + world, tank: 2 + Math.floor(world / 2) };
       if (G.meta.has('vet')) { cap.tank += 2; cap.commando = 3; }
       give(0, s, cap);
-      extra.forEach(t => give(0, t, { inf: 2 }));
+      extra.forEach(t => { give(0, t, { inf: 3 }); m.terr[t].b = { barracks: 1 }; });
     } else {
       const k = wd.aiStart * (mode === 'world' ? 1.2 : 1) * ({ easy: 0.75, normal: 1, hard: 1.3 }[diff] || 1);
       const u = { inf: Math.round(4 * k + (country || 0) * 0.6), tank: Math.round(1 * k + world * 0.4) };
@@ -139,6 +144,8 @@ G.newMatch = function (world, country, diff) {
       adv.forEach((t, i) => { if (R() < 0.7) u[t] = (u[t] || 0) + 1 + Math.floor(world / 3); });
       give(fi, s, u);
       m.terr[s].fort = 1;
+      m.terr[s].b = { barracks: 1, warfactory: 1, house: 1 };
+      if (wd.tier.some(t => G.UNIT_BUILDING[t] === 'airbase')) m.terr[s].b.airbase = 1;
       extra.forEach(t => give(fi, t, { inf: Math.round(2 * k) }));
     }
   });
@@ -153,6 +160,10 @@ G.newMatch = function (world, country, diff) {
     if (T.type === 'city') u.inf += 1;
     st.units = u;
     if (T.type === 'mountain' || (T.type === 'city' && R() < 0.4)) st.fort = 1;
+    // spoils of war: some neutral land already has buildings worth capturing
+    if (T.type === 'city') st.b = R() < 0.5 ? { house: 1, office: 1 } : { house: 2 };
+    else if (T.type === 'resource') st.b = { factory: 1 };
+    else if (R() < 0.15) st.b = { house: 1 };
   }
   G.genObjectives(m, R);
   return m;
@@ -206,6 +217,7 @@ G.act = {
     const st = m.terr[tid], f = m.factions[fi];
     const cost = G.UNITS[type].cost * n;
     if (st.owner !== fi || f.credits < cost || n <= 0) return false;
+    if (!G.canRecruitAt(st, type)) return false;
     f.credits -= cost;
     st.units[type] = (st.units[type] || 0) + n;
     if (fi === 0) { m.stats.recruited += n; if (type === 'mech') G.meta.ach('mech'); }
@@ -218,10 +230,17 @@ G.act = {
       if (st.fort >= G.maxFort(fi)) return false;
       const c = G.fortCost(st.fort, fi); if (f.credits < c) return false;
       f.credits -= c; st.fort++;
-    } else {
+    } else if (kind === 'mine') {
       if (st.mine >= 3) return false;
       const c = G.mineCost(st.mine, fi); if (f.credits < c) return false;
       f.credits -= c; st.mine++;
+    } else {
+      const B = G.BUILDINGS[kind]; if (!B) return false;
+      st.b = st.b || {};
+      const lvl = st.b[kind] || 0;
+      if (lvl >= B.max || G.slotsUsed(st) >= G.buildSlots(G.map.terrs[tid])) return false;
+      const c = G.buildingCost(kind, lvl, fi); if (f.credits < c) return false;
+      f.credits -= c; st.b[kind] = lvl + 1;
     }
     if (fi === 0) m.stats.built++;
     return true;
@@ -255,6 +274,8 @@ G.act = {
     if (res.win) {
       d.owner = fi; d.units = G.cloneU(res.A); d.tired = G.cloneU(res.A);
       d.fort = Math.max(0, d.fort - 1);
+      // fighting damages one building; the rest change hands
+      if (d.b && !res.empty) { const ks = Object.keys(d.b).filter(k => d.b[k] > 0); if (ks.length && Math.random() < 0.35) { const k = ks[Math.floor(Math.random() * ks.length)]; d.b[k]--; if (!d.b[k]) delete d.b[k]; } }
       G.onCapture(m, fi, to, prevOwner);
     } else {
       d.units = G.cloneU(res.D);
@@ -301,6 +322,11 @@ G.missionKey = m => 'w' + m.world + (m.mode === 'world' ? 'all' : 'c' + m.countr
 G.startTurn = function (m, fi) {
   const f = m.factions[fi];
   if (!(m.turn === 1 && fi === 0)) f.credits += G.incomeOf(m, fi);
+  if (fi === 0 && m.turn > 1) {   // office towers generate research points
+    const offices = G.ownedBy(m, 0).reduce((s, t) => s + ((m.terr[t].b && m.terr[t].b.office) || 0), 0);
+    m.officePts = (m.officePts || 0) + offices;
+    if (m.officePts >= 4) { const tp = Math.floor(m.officePts / 4); m.officePts -= tp * 4; G.meta.data.tp += tp; G.meta.save(); G.ui && G.ui.toast(`מגדלי המשרדים הניבו +${tp} נקודות מחקר`, 'gold'); }
+  }
   for (const T of G.map.terrs) if (m.terr[T.id].owner === fi) m.terr[T.id].tired = {};
   if (fi === 0) {
     for (const k in m.cd) if (m.cd[k] > 0) m.cd[k]--;
@@ -338,5 +364,5 @@ G.ability = {
 
 /* ---------- save / load running match ---------- */
 G.saveMatch = function (m) { try { localStorage.setItem('nw_match_v1', JSON.stringify(m)); } catch (e) {} };
-G.loadMatch = function () { try { const m = JSON.parse(localStorage.getItem('nw_match_v1')); if (m && !m.over && m.v === 1) return m; } catch (e) {} return null; };
+G.loadMatch = function () { try { const m = JSON.parse(localStorage.getItem('nw_match_v1')); if (m && !m.over && m.v === 2) return m; } catch (e) {} return null; };
 G.clearMatch = function () { try { localStorage.removeItem('nw_match_v1'); } catch (e) {} };
