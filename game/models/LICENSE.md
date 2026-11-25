@@ -17,3 +17,5 @@ They were optimized for the web (quantized geometry, 512px WebP textures).
 | ship.glb, boat.glb | Ships Pack |
 | b_building*, b_house*, b_4story, b_6story_stack | Ultimate Buildings Pack / Buildings Pack (geometry simplified) |
 | b_antenna_1 | Cyberpunk Game Kit |
+| apc.glb, mlrs.glb | Animated Tanks Pack (Tank2, Tank3) |
+| bomber.glb | Ultimate Spaceships Pack (Insurgent) |

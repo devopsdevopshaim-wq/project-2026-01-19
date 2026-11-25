@@ -14,7 +14,7 @@ G.sfx = (function () {
     scream: ['voice/scream1', 'voice/scream2', 'voice/scream3', 'voice/death1', 'voice/death2'], hurt: ['voice/hurt1', 'voice/hurt2'],
     victory: ['music/victory'], defeat: ['music/defeat'], levelup: ['music/levelup']
   };
-  const VOICES = ['go_go_go', 'fire_in_the_hole', 'cover_me', 'target_destroyed', 'target_engaged', 'call_for_backup', 'look_out', 'get_down', 'rpg', 'mission_completed', 'mission_failed', 'objective_achieved'];
+  const VOICES = ['ready', 'go', 'go_go_go', 'fire_in_the_hole', 'cover_me', 'target_destroyed', 'target_engaged', 'call_for_backup', 'look_out', 'get_down', 'rpg', 'mission_completed', 'mission_failed', 'objective_achieved'];
   VOICES.forEach(v => { FILES['a_' + v] = ['voice/a_' + v]; FILES['b_' + v] = ['voice/b_' + v]; });
   FILES.b_suppressing_fire = ['voice/b_suppressing_fire'];
   const AMB = ['sfx/amb_sea', 'sfx/amb_wind', 'sfx/amb_sea', 'sfx/amb_wind', 'sfx/amb_city'];
@@ -163,6 +163,10 @@ G.sfx = (function () {
     // --- combat ---
     shot(type) {
       if (!ac || !on()) return;
+      if (type === 'sniper') { if (throttle('snipe', 300)) play('smg', { vol: 0.5, rate: 0.7, vary: 0.05 }); return; }
+      if (type === 'rpg' || type === 'drone' || type === 'mlrs') { if (throttle('msl', 120)) play('missile', { vol: 0.5, rate: 1.3 }); return; }
+      if (type === 'bomber') { if (throttle('bomb', 400)) play('engine', { vol: 0.35, rate: 0.6 }); return; }
+      if (type === 'apc') type = 'inf';
       if (type === 'tank' || type === 'mech') { if (throttle('cannon', 90)) play('bigboom', { vol: 0.45, rate: 1.5, vary: 0.2 }) || noise(0.3, 0.3, 700); }
       else if (type === 'art') { if (throttle('art', 150)) play('bigboom', { vol: 0.6, rate: 1.1 }); }
       else if (type === 'heli' || type === 'jet' || type === 'aa') { if (throttle('msl', 120)) play('missile', { vol: 0.55, rate: 1.2 }) || noise(0.15, 0.15, 3000, 'bandpass'); }
@@ -179,6 +183,22 @@ G.sfx = (function () {
       play((enemy ? 'b_' : 'a_') + line, { vol: 1, vary: 0.03, radio: true, bus: voiceBus });
     },
     shield() { play('shield', { vol: 0.7 }); },
+    // war cry: drum roll, a commander's call, then a squad shouting together
+    warCry(big = true) {
+      if (!ac || !on()) return;
+      this.duck(true);
+      play('snare', { vol: 0.9, vary: 0 });
+      play('snare', { vol: 0.7, vary: 0, delay: 0.55 });
+      play('a_ready', { vol: 1, vary: 0, radio: true, bus: voiceBus, delay: 0.2 });
+      const crowd = big ? 6 : 3;
+      for (let i = 0; i < crowd; i++) {
+        const k = (i % 2 ? 'b_' : 'a_') + (i < 2 ? 'go' : 'go_go_go');
+        play(k, { vol: 0.55 + Math.random() * 0.25, rate: 0.88 + Math.random() * 0.24, vary: 0, bus: voiceBus, delay: 1.1 + i * 0.09 + Math.random() * 0.06, pan: (Math.random() - 0.5) * 1.4 });
+      }
+      for (let i = 0; i < (big ? 3 : 1); i++) play('hurt', { vol: 0.3, rate: 0.75 + Math.random() * 0.2, vary: 0, delay: 1.25 + i * 0.15, pan: (Math.random() - 0.5) });
+      last.voice = performance.now() + 1500;
+      setTimeout(() => this.duck(false), 3200);
+    },
     whistle() { if (!ac || !on() || !throttle('whistle', 400)) return; const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(420, t + 0.55); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.6); },
     flak() { if (throttle('flak', 120)) play('expl', { vol: 0.22, rate: 1.7 }); },
     engine() { if (throttle('engine', 1500)) play('engine', { vol: 0.25, rate: 0.7 }); },

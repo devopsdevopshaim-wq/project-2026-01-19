@@ -27,7 +27,7 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
         pm.dispose();
       }
       this.scene.environment = this._envTex;
-      this.scene.environmentIntensity = 0.32;
+      this.scene.environmentIntensity = 0.18;
     } catch (e) {}
     this.vfx = null;
   };
@@ -281,9 +281,9 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
     if (!this.vfx || !this.scene) return;
     const from = o.from.clone(), to = o.to.clone();
     const dist = from.distanceTo(to);
-    const dur = { bullet: 0.07 + dist * 0.02, shell: 0.1 + dist * 0.03, arty: 1.1, missile: 0.55 + dist * 0.08, flak: 0.22 }[o.kind];
+    const dur = { bullet: 0.07 + dist * 0.02, shell: 0.1 + dist * 0.03, arty: 1.1, missile: 0.55 + dist * 0.08, flak: 0.22, rocket: 0.35 + dist * 0.06, salvo: 1.0 + Math.random() * 0.3, bomb: 0.75 }[o.kind];
     let obj = null;
-    if (o.kind === 'missile') {
+    if (o.kind === 'missile' || o.kind === 'rocket' || o.kind === 'salvo') {
       obj = new THREE.Group();
       obj.add(mesh(geo('msl', () => new THREE.CylinderGeometry(0.014, 0.014, 0.12, 6).rotateZ(Math.PI / 2)), mats('#5a5a5a').mid));
       const fl = new THREE.Mesh(geo('mflame', () => new THREE.SphereGeometry(0.025, 8, 6)), shellMat); fl.position.x = -0.075; obj.add(fl);
@@ -292,9 +292,9 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
       if (o.kind !== 'bullet') obj.scale.set(0.6, 2, 2);
     }
     if (obj) { obj.position.copy(from); this.fxLayer.add(obj); }
-    const ctrl = from.clone().lerp(to, 0.5).add(V(rnd(-0.3, 0.3), o.kind === 'arty' ? 2.4 + dist * 0.3 : o.kind === 'missile' ? rnd(0.2, 0.6) : 0, rnd(-0.3, 0.3)));
+    const ctrl = from.clone().lerp(to, 0.5).add(V(rnd(-0.3, 0.3), o.kind === 'arty' || o.kind === 'salvo' ? 2.2 + dist * 0.3 : o.kind === 'missile' ? rnd(0.2, 0.6) : o.kind === 'rocket' ? rnd(0.05, 0.2) : o.kind === 'bomb' ? 0.2 : 0, rnd(-0.3, 0.3)));
     const bez = t => { const a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t; return V(a * from.x + b * ctrl.x + c * to.x, a * from.y + b * ctrl.y + c * to.y, a * from.z + b * ctrl.z + c * to.z); };
-    const curved = o.kind === 'arty' || o.kind === 'missile';
+    const curved = o.kind === 'arty' || o.kind === 'missile' || o.kind === 'salvo' || o.kind === 'rocket' || o.kind === 'bomb';
     let t = 0, prev = from.clone(), whistled = false;
     this.vfx.projectiles.push({
       update: (dt) => {
@@ -306,14 +306,14 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
           if (dir.lengthSq() > 1e-8) { obj.lookAt(p.clone().add(dir)); obj.rotateY(-Math.PI / 2); }
         }
         prev.copy(p);
-        if (o.kind === 'missile' && Math.random() < 0.9) this.puff('smoke', p.clone(), { size: 0.08, grow: 3, life: 1.6, vel: V(0, 0.04, 0), op: 0.55, tint: 0xc9c4bc, rise: 0.05 });
-        if (o.kind === 'arty' && !whistled && t > 0.5) { whistled = true; G.sfx.whistle && G.sfx.whistle(); }
+        if ((o.kind === 'missile' || o.kind === 'rocket' || o.kind === 'salvo') && Math.random() < 0.9) this.puff('smoke', p.clone(), { size: 0.08, grow: 3, life: 1.6, vel: V(0, 0.04, 0), op: 0.55, tint: 0xc9c4bc, rise: 0.05 });
+        if ((o.kind === 'arty' || o.kind === 'bomb' || o.kind === 'salvo') && !whistled && t > 0.5) { whistled = true; G.sfx.whistle && G.sfx.whistle(); }
         if (t >= 1) { if (obj) this.fxLayer.remove(obj); o.onHit && o.onHit(to); return false; }
         return true;
       }
     });
     // muzzle: small flash; big guns throw up a dust cloud around the barrel
-    const mz = { bullet: 0.09, shell: 0.3, arty: 0.38, missile: 0.16, flak: 0.14 }[o.kind];
+    const mz = { bullet: 0.09, shell: 0.3, arty: 0.38, missile: 0.16, flak: 0.14, rocket: 0.2, salvo: 0.28, bomb: 0.01 }[o.kind];
     this.sprite(from, { color: '#ffcc88', size: mz, life: 0.05, glow: 1.3 });
     if (o.kind === 'shell' || o.kind === 'arty') {
       this.flash(from, 1.6, 0xffb060);
@@ -324,9 +324,9 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
 
   /* ---------- battle ---------- */
   const CLS = t => G.UNITS[t].cls;
-  const WEAPON = { inf: 'bullet', commando: 'bullet', tank: 'shell', art: 'arty', aa: 'flak', heli: 'missile', jet: 'missile', mech: 'shell' };
-  const PREF = { inf: ['inf', 'art', 'aa'], commando: ['inf', 'art', 'aa'], tank: ['armor', 'inf', 'aa', 'art'], art: ['armor', 'inf', 'aa', 'art'], aa: ['air'], heli: ['armor', 'art', 'aa'], jet: ['armor', 'air', 'art'], mech: ['armor', 'air', 'inf'] };
-  const RELOAD = { bullet: [1.0, 2.0], shell: [2.8, 4.0], arty: [3.8, 5.2], missile: [3, 4.5], flak: [0.7, 1.2] };
+  const WEAPON = { inf: 'bullet', commando: 'bullet', tank: 'shell', art: 'arty', aa: 'flak', heli: 'missile', jet: 'missile', mech: 'shell', rpg: 'rocket', sniper: 'snipe', apc: 'bullet', mlrs: 'salvo', drone: 'missile', bomber: 'bomb' };
+  const PREF = { inf: ['inf', 'art', 'aa'], commando: ['inf', 'art', 'aa'], tank: ['armor', 'inf', 'aa', 'art'], art: ['armor', 'inf', 'aa', 'art'], aa: ['air'], heli: ['armor', 'art', 'aa'], jet: ['armor', 'air', 'art'], mech: ['armor', 'air', 'inf'], rpg: ['armor', 'art', 'aa'], sniper: ['inf', 'art', 'aa'], apc: ['inf', 'art', 'aa'], mlrs: ['inf', 'art', 'armor', 'aa'], drone: ['armor', 'art', 'aa', 'inf'], bomber: ['armor', 'art', 'inf', 'aa'] };
+  const RELOAD = { bullet: [1.0, 2.0], shell: [2.8, 4.0], arty: [3.8, 5.2], missile: [3, 4.5], flak: [0.7, 1.2], rocket: [3.5, 5], snipe: [2.4, 3.4], salvo: [5.5, 7], bomb: [4.5, 6] };
 
   P.battle = function (opts) {
     return new Promise(resolve => {
@@ -391,7 +391,8 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
         w.position.copy(C).addScaledVector(dir, -0.45 - l * 0.18).addScaledVector(perp, k * 0.36); w.position.y = C.y + 0.06;
         w.rotation.y = yawTo(V(), perp); this.fxLayer.add(w); walls.push(w);
       }
-      if (playerSide === 'A') { G.sfx.voice('go_go_go'); setTimeout(() => G.sfx.voice('target_engaged', true), 2200); }
+      const bigAssault = G.countUnits(opts.att.units) >= 7;
+      if (playerSide === 'A') { if (bigAssault && G.sfx.warCry) G.sfx.warCry(false); else G.sfx.voice('go_go_go'); setTimeout(() => G.sfx.voice('target_engaged', true), 2600); }
       else { G.sfx.voice('look_out'); setTimeout(() => G.sfx.voice('cover_me'), 2200); }
 
       const res = opts.result, initial = { A: G.cloneU(opts.att.units), D: G.cloneU(opts.def.units) };
@@ -518,6 +519,22 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
                 p.y = Math.max(p.y, C.y + 0.02);
                 this.fire({ from: muzzle(u), to: p, kind, tracer: b === 1, onHit: q => { if (Math.random() < 0.6) this.puff('smoke', q, { size: 0.05, grow: 2.5, life: 0.7, tint: this.dustColor(), op: 0.7, vel: V(0, 0.25, 0) }); if (CLS(tg.userData.type) === 'armor' && Math.random() < 0.3) this.sparks(q, 3, 1.4); } });
               }, b * 85);
+            } else if (kind === 'snipe') {
+              const p = aimPt(tg).add(miss.multiplyScalar(0.4)); p.y = Math.max(p.y, C.y + 0.02);
+              this.fire({ from: muzzle(u), to: p, kind: 'bullet', tracer: true, onHit: q => this.puff('smoke', q, { size: 0.06, grow: 2.5, life: 0.8, tint: this.dustColor(), op: 0.7, vel: V(0, 0.25, 0) }) });
+            } else if (kind === 'salvo') {
+              for (let r2 = 0; r2 < 6; r2++) setTimeout(() => {
+                if (finished || !ud.alive) return;
+                const p = aimPt(tg).add(V(rnd(-0.6, 0.6), 0, rnd(-0.6, 0.6))); p.y = C.y;
+                this.fire({ from: muzzle(u).add(V(0, 0.08, 0)), to: p, kind: 'salvo', onHit: q => this.dirtImpact(q, 0.55) });
+                G.sfx.shot('heli');
+              }, r2 * 140);
+            } else if (kind === 'bomb') {
+              for (let r2 = 0; r2 < 3; r2++) setTimeout(() => {
+                if (finished || !ud.alive) return;
+                const p = aimPt(tg).add(V(rnd(-0.4, 0.4), 0, rnd(-0.4, 0.4))); p.y = C.y;
+                this.fire({ from: u.position.clone().add(V(0, -0.1, 0)), to: p, kind: 'bomb', onHit: q => this.dirtImpact(q, 1) });
+              }, r2 * 180);
             } else {
               const to = kind === 'flak' ? tg.position.clone().add(V(rnd(-0.3, 0.3), rnd(-0.05, 0.3), rnd(-0.3, 0.3))) : aimPt(tg).add(miss.multiplyScalar(1.4));
               if (kind !== 'flak') to.y = Math.max(C.y, Math.min(to.y, C.y + 0.05));
@@ -555,7 +572,8 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
             if (!s) { kill(v); continue; }
             s.userData.target = v;
             let kind = WEAPON[s.userData.type];
-            if (kind === 'flak') kind = 'missile';
+            if (kind === 'flak' || kind === 'salvo') kind = 'missile';
+            if (kind === 'snipe') kind = CLS(v.userData.type) === 'inf' ? 'shell' : 'missile';
             if (kind === 'bullet' && CLS(v.userData.type) !== 'inf') kind = 'missile'; // infantry anti-tank rocket
             G.sfx.shot(s.userData.type);
             this.fire({ from: muzzle(s), to: aimPt(v), kind, tracer: true, onHit: () => kill(v) });

@@ -210,7 +210,7 @@ G.ui = {
       <li>השלם <b>משימות צד</b> ונצח מהר כדי לקבל ⭐ ו<b>נקודות מחקר</b> – פתח יחידות ויכולות חדשות במעבדה.</li>
       <li>במחשב: גלגלת = זום, גרירה = הזזת מפה, E = סיום תור, Esc = ביטול.</li>
       </ul><div class="m-actions"><button class="btn primary" id="b-ok">הבנתי!</button></div>`);
-    $('#b-ok').onclick = () => { this.closeModal(); G.meta.data.tut = true; G.meta.save(); };
+    $('#b-ok').onclick = () => { this.closeModal(); G.meta.data.tut = true; G.meta.save(); if (G.ctl.warCryNow) G.ctl.warCryNow(); };
   }
 };
 
@@ -412,6 +412,7 @@ G.ctl = {
     G.saveMatch(m);
     if (fresh && !G.meta.data.tut) setTimeout(() => G.ui.howto(), 400);
     else if (fresh) this.objectivesModal(true);
+    if (fresh) this.pendingWarCry = true;
   },
 
   /* ---- input ---- */
@@ -539,6 +540,7 @@ G.ctl = {
       return `<span class="chip ${tired ? 'tired' : ''}" title="${G.UNITS[k].name}">${G.svg(k)} ${st.units[k]}${tired && mv[k] ? ` <small>(${mv[k]} זמינים)</small>` : ''}</span>`;
     }).join('') || '<span class="chip">ללא כוחות</span>';
     const inc = G.TTYPES[T.type].inc + st.mine * (15 + (G.meta.has('mine1') && st.owner === 0 ? 5 : 0));
+    const incB = st.b ? Object.keys(st.b).reduce((t2, k) => t2 + (G.BUILDINGS[k] ? G.BUILDINGS[k].inc * st.b[k] : 0), 0) : 0;
     const defp = Math.round((G.defBonus(m, tid, {}) - 1) * 100);
     const cap = m.factions.some(f => f.capital === tid && f.alive);
     const country = G.map.countries[T.country].name;
@@ -549,7 +551,8 @@ G.ctl = {
         <button class="p-close" id="p-close">✕</button></div>
       <div class="p-hint" id="p-hint"></div>
       <div class="p-units">${chips}</div>
-      <div class="p-meta"><span>הכנסה <b>+${inc}</b></span><span>הגנה <b>+${defp}%</b></span><span>ביצור <b>${st.fort}</b></span><span>מכרה <b>${st.mine}</b></span>${shield ? '<span style="color:#7fe3ff">🛡 מוגן</span>' : ''}</div>
+      ${st.b && Object.keys(st.b).length ? `<div class="p-blds">${G.BUILD_ORDER.filter(k => st.b[k]).map(k => `<span class="chip" title="${G.BUILDINGS[k].name}">${G.svg(G.BUILDINGS[k].icon)} ${G.BUILDINGS[k].name}${st.b[k] > 1 ? " ×" + st.b[k] : ""}</span>`).join("")}</div>` : ""}
+      <div class="p-meta"><span>הכנסה <b>+${inc + incB}</b></span><span>הגנה <b>+${defp}%</b></span><span>ביצור <b>${st.fort}</b></span><span>מכרה <b>${st.mine}</b></span>${shield ? '<span style="color:#7fe3ff">🛡 מוגן</span>' : ''}</div>
       ${st.owner === 0 ? `<div class="p-actions">
         <button class="btn cyan" id="p-rec">${G.svg('inf')} גייס</button>
         <button class="btn" id="p-build">${G.svg('build')} בנה</button>
@@ -633,23 +636,26 @@ G.ctl = {
 
   /* ---- dialogs ---- */
   recruitDialog(tid) {
-    const m = this.m, f = m.factions[0];
+    const m = this.m, f = m.factions[0], st = m.terr[tid];
     const units = G.meta.playerUnits(m.world);
     const q = {}; units.forEach(u => q[u] = 0);
+    const needName = k => G.BUILDINGS[G.UNIT_BUILDING[k]].name;
     const card = G.ui.modal(`<h2>גיוס – ${G.map.terrs[tid].name}</h2>
+      <p style="margin-bottom:4px">כל יחידה מיוצרת במבנה מתאים: חיילים בבסיס טירונים, כלי רכב במפעל רכב צבאי, כלי טיס בבסיס חיל אוויר.</p>
       <div class="u-grid">${units.map(u => {
-        const U = G.UNITS[u];
-        return `<div class="u-card"><div class="u-top">${G.svg(u)} ${U.name}</div>
+        const U = G.UNITS[u], ok = G.canRecruitAt(st, u);
+        return `<div class="u-card ${ok ? '' : 'locked-card'}"><div class="u-top">${G.svg(u)} ${U.name}</div>
         <div class="u-stats">⚔ ${U.atk} · ❤ ${U.hp} · <span class="cost">${U.cost}💰</span></div>
         <div class="u-desc">${U.desc}</div>
-        <div class="qty"><button class="btn" data-u="${u}" data-d="-1">−</button><b id="q-${u}">0</b><button class="btn" data-u="${u}" data-d="1">+</button><button class="btn sm" data-u="${u}" data-d="5">+5</button></div></div>`;
+        ${ok ? `<div class="qty"><button class="btn" data-u="${u}" data-d="-1">−</button><b id="q-${u}">0</b><button class="btn" data-u="${u}" data-d="1">+</button><button class="btn sm" data-u="${u}" data-d="5">+5</button></div>`
+             : `<div class="need">${G.svg(G.BUILDINGS[G.UNIT_BUILDING[u]].icon)} דורש ${needName(u)}</div>`}</div>`;
       }).join('')}</div>
-      ${G.meta.playerUnits(m.world).length < 8 ? '<p style="margin-top:10px;font-size:12.5px">💡 יחידות נוספות נפתחות במעבדת המחקר.</p>' : ''}
+      ${units.length < G.UNIT_ORDER.length ? '<p style="margin-top:10px;font-size:12.5px">💡 כלי נשק נוספים נפתחים במעבדת המחקר.</p>' : ''}
       <div class="total-row"><span>סה״כ: <span class="cost" id="q-tot">0</span></span><span>יתרה: <span id="q-left">${G.fmt(f.credits)}</span></span></div>
-      <div class="m-actions"><button class="btn" id="q-max">מקסימום רגלים</button><button class="btn" id="b-cancel">ביטול</button><button class="btn primary" id="b-ok">גייס</button></div>`);
-    const total = () => units.reduce((s, u) => s + q[u] * G.UNITS[u].cost, 0);
+      <div class="m-actions"><button class="btn" id="b-cancel">ביטול</button><button class="btn" id="b-bld">${G.svg('build')} למבנים</button><button class="btn primary" id="b-ok">גייס</button></div>`);
+    const total = () => units.reduce((s2, u) => s2 + q[u] * G.UNITS[u].cost, 0);
     const upd = () => {
-      units.forEach(u => $('#q-' + u).textContent = q[u]);
+      units.forEach(u => { const e = $('#q-' + u); if (e) e.textContent = q[u]; });
       $('#q-tot').textContent = G.fmt(total());
       $('#q-left').textContent = G.fmt(f.credits - total());
       $('#b-ok').disabled = total() === 0;
@@ -663,8 +669,8 @@ G.ctl = {
       } else q[u] = Math.max(0, q[u] + d);
       G.sfx.click(); upd();
     });
-    $('#q-max').onclick = () => { q.inf += Math.floor((f.credits - total()) / G.UNITS.inf.cost); upd(); };
     $('#b-cancel').onclick = () => G.ui.closeModal();
+    $('#b-bld').onclick = () => this.buildDialog(tid);
     $('#b-ok').onclick = () => {
       for (const u of units) if (q[u] > 0) G.act.recruit(m, 0, tid, u, q[u]);
       G.ui.closeModal(); G.sfx.buy();
@@ -677,24 +683,33 @@ G.ctl = {
   },
 
   buildDialog(tid) {
-    const m = this.m, f = m.factions[0], st = m.terr[tid];
-    const row = (kind, icon, name, desc, lvl, max, cost) => `<div class="build-row">${G.svg(icon)}<div><b>${name}</b><small>${desc}</small>
-      <div class="lvl">${Array.from({ length: max }, (_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</div></div>
-      ${lvl >= max ? '<span class="chip">מקסימום</span>' : `<button class="btn ${f.credits >= cost ? 'primary' : ''}" data-k="${kind}" ${f.credits >= cost ? '' : 'disabled'}>${cost}💰</button>`}</div>`;
-    G.ui.modal(`<h2>בנייה – ${G.map.terrs[tid].name}</h2>
-      ${row('fort', 'fort', 'ביצור', '+25% הגנה לכל רמה', st.fort, G.maxFort(0), G.fortCost(Math.min(st.fort, 3), 0))}
-      ${row('mine', 'mine', 'מכרה / באר נפט', `+${15 + (G.meta.has('mine1') ? 5 : 0)} הכנסה לכל רמה`, st.mine, 3, G.mineCost(Math.min(st.mine, 2), 0))}
-      <div class="m-actions"><button class="btn" id="b-cancel">סגור</button></div>`);
-    $$('#modal-card [data-k]').forEach(b => b.onclick = () => {
-      if (G.act.build(m, 0, tid, b.dataset.k)) {
+    const m = this.m, f = m.factions[0], st = m.terr[tid], T = G.map.terrs[tid];
+    st.b = st.b || {};
+    const used = G.slotsUsed(st), slots = G.buildSlots(T);
+    const lv = (lvl, max) => `<div class="lvl">${Array.from({ length: max }, (_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</div>`;
+    const row = (kind, icon, name, desc, lvl, max, cost, full) => `<div class="build-row">${G.svg(icon)}<div><b>${name}</b><small>${desc}</small>${lv(lvl, max)}</div>
+      ${lvl >= max ? '<span class="chip">הושלם</span>' : full ? '<span class="chip">אין מקום</span>' : `<button class="btn ${f.credits >= cost ? 'primary' : ''}" data-k="${kind}" ${f.credits >= cost ? '' : 'disabled'}>${cost}💰</button>`}</div>`;
+    const full = used >= slots;
+    const sect = (title, html) => `<h3 class="b-sect">${title}</h3>${html}`;
+    const bRow = k => { const B = G.BUILDINGS[k], l = st.b[k] || 0; return row(k, B.icon, B.name, B.desc, l, B.max, G.buildingCost(k, Math.min(l, B.max - 1), 0), full); };
+    G.ui.modal(`<h2>בנייה – ${T.name}</h2>
+      <p>מגרשי בנייה: <b>${used}/${slots}</b> ${T.type === 'city' ? '(עיר: +2 מגרשים)' : T.type === 'resource' ? '(אזור משאבים: +1)' : ''}. מבנים בשטח שנכבש עוברים לכובש.</p>
+      ${sect('מרכזי צבא', ['barracks', 'warfactory', 'airbase'].map(bRow).join(''))}
+      ${sect('כלכלה ועיר', ['house', 'factory', 'office'].map(bRow).join(''))}
+      ${sect('הגנה ומשאבים (לא תופסים מגרש)', row('fort', 'fort', 'ביצור', '+25% הגנה לכל רמה', st.fort, G.maxFort(0), G.fortCost(Math.min(st.fort, 3), 0), false) + row('mine', 'mine', 'מכרה / באר נפט', `+${15 + (G.meta.has('mine1') ? 5 : 0)} הכנסה לכל רמה`, st.mine, 3, G.mineCost(Math.min(st.mine, 2), 0), false))}
+      <div class="m-actions"><button class="btn" id="b-cancel">סגור</button><button class="btn cyan" id="b-rec">${G.svg('inf')} לגיוס</button></div>`);
+    document.querySelectorAll('#modal-card [data-k]').forEach(b => b.onclick = () => {
+      const k = b.dataset.k;
+      if (G.act.build(m, 0, tid, k)) {
         G.sfx.buy();
-        const T = G.map.terrs[tid];
         this.rend.addFx({ type: 'ring', x: T.cx, y: T.cy, dur: 700, col: '#ffd23f', size: 50 });
+        this.rend.addFx({ type: 'text', x: T.cx, y: T.cy, dur: 1400, text: G.BUILDINGS[k] ? G.BUILDINGS[k].name : (k === 'fort' ? 'ביצור' : 'מכרה'), col: '#ffd23f' });
         G.checkObjectives(m);
         this.refreshHUD(); this.renderPanel(); this.buildDialog(tid);
       }
     });
     $('#b-cancel').onclick = () => G.ui.closeModal();
+    $('#b-rec').onclick = () => this.recruitDialog(tid);
   },
 
   unitChooser(units, onChange) {
@@ -897,7 +912,17 @@ G.ctl = {
       <b>משימות צד (פרס: קרדיטים + נק״מ):</b>
       ${m.objectives.map(o => `<div class="obj ${o.done ? 'done' : ''}">${o.done ? '✅' : '🎯'} ${o.text}<span class="pr">${o.done ? 'הושלם' : Math.min(G.objProgress(m, o), o.n) + '/' + o.n}</span></div>`).join('')}
       <div class="m-actions"><button class="btn primary" id="b-ok">${start ? 'התחל!' : 'סגור'}</button></div>`);
-    $('#b-ok').onclick = () => G.ui.closeModal();
+    $('#b-ok').onclick = () => { G.ui.closeModal(); this.warCryNow(); };
+  },
+
+  warCryNow() {
+    if (!this.pendingWarCry) return;
+    this.pendingWarCry = false;
+    const bn = $('#ai-banner');
+    bn.innerHTML = '<span style="color:#ff5a3c;font-size:1.3em">!למלחמה</span>';
+    bn.classList.add('show');
+    setTimeout(() => bn.classList.remove('show'), 2200);
+    G.sfx.unlock(); if (G.sfx.warCry) G.sfx.warCry(true);
   },
 
   pauseMenu() {

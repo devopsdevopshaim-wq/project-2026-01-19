@@ -37,7 +37,7 @@ G._damage = function (X, Y, mul) {
   if (!tot) return out;
   for (const k in X) {
     const u = G.UNITS[k], dmg = X[k] * u.atk * mul;
-    for (const c in pools) out[c] = (out[c] || 0) + dmg * (pools[c] / tot) * G.COUNTER[u.cls][c];
+    for (const c in pools) out[c] = (out[c] || 0) + dmg * (pools[c] / tot) * ((u.vs && u.vs[c]) || G.COUNTER[u.cls][c]);
   }
   return out;
 };
