@@ -36,11 +36,21 @@ G.AI = {
     const interior = own().filter(t => !frontier.includes(t));
     // ---- production & economy buildings ----
     const has = k => own().some(t => m.terr[t].b && m.terr[t].b[k]);
+    const enemyAirNear = t => terrs[t].adj.some(a => { const u = m.terr[a].units; return enemyOf(m.terr[a].owner) && m.terr[a].owner !== fi && ((u.heli || 0) + (u.jet || 0) + (u.drone || 0) + (u.bomber || 0)) > 0; });
     const bFront = frontier.length ? frontier.slice().sort((a, b) => threat[b] - threat[a]) : own();
     const tryBuild = (list, kind) => { for (const t of list) if (G.act.build(m, fi, t, kind)) return true; return false; };
     if (!bFront.slice(0, 3).some(t => m.terr[t].b && m.terr[t].b.barracks) && f.credits > 260) tryBuild(bFront.slice(0, 3), 'barracks');
     if (!has('warfactory') && f.credits > 420) tryBuild(bFront.concat(interior), 'warfactory');
     if (tier.some(t => G.UNIT_BUILDING[t] === 'airbase') && !has('airbase') && f.credits > 650) tryBuild(interior.concat(bFront), 'airbase');
+    // defences on the most threatened front, a fortress at the capital when rich
+    if (frontier.length && f.credits > 320) {
+      const hot = bFront[0];
+      if (threat[hot] > myP(hot) * 0.7 || pers === 'turtle') {
+        const kinds = enemyAirNear(hot) ? ['aagun', 'bunker'] : pers === 'turtle' ? ['bunker', 'cannon', 'tower'] : ['cannon', 'tower', 'bunker'];
+        tryBuild([hot], kinds[Math.floor(Math.random() * kinds.length)]);
+      }
+    }
+    if (f.capital >= 0 && m.terr[f.capital].owner === fi && f.credits > 950 && Math.random() < 0.4) G.act.build(m, fi, f.capital, 'fortress');
     if (f.credits > 380 && Math.random() < 0.45) {
       const kind = Math.random() < 0.5 ? 'factory' : Math.random() < 0.6 ? 'house' : 'office';
       tryBuild((interior.length ? interior : own()).slice().sort(() => Math.random() - 0.5), kind);
@@ -109,7 +119,8 @@ G.AI = {
         const k = Object.keys(send).sort((x, y) => G.UNITS[x].cost - G.UNITS[y].cost)[0];
         send[k]--; if (!send[k]) delete send[k];
       }
-      if (!G.countUnits(m.terr[best].units)) { // just one unit is enough for empty land
+      const bd = m.terr[best].d || {};
+      if (!G.countUnits(m.terr[best].units) && !(bd.cannon || bd.tower || bd.aagun)) { // just one unit is enough for empty, undefended land
         const k = Object.keys(send).sort((x, y) => G.UNITS[x].cost - G.UNITS[y].cost)[0];
         for (const x in send) if (x !== k) delete send[x];
         send[k] = 1;

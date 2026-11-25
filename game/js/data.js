@@ -39,6 +39,12 @@ G.ICONS = {
   drone: 'M10 10h4v4h-4zM3 4.5h6v1.6H3zm12 0h6v1.6h-6zM3 17.9h6v1.6H3zm12 0h6v1.6h-6zM5.3 6.1h1.4l4 4-1 1zm12 0h1.4l-4.4 5-1-1zM9.3 13l1 1-4 4H5.3zm5.4 0l4 5h-1.4l-3.6-4z',
   bomber: 'M12 2l1.6 6 9.4 4.5v1.8L13.6 12l-.5 6.5 3 2v1.5L12 21l-4.1 1v-1.5l3-2-.5-6.5L1 14.3v-1.8L10.4 8z',
   house: 'M3 11L12 3l9 8v10h-6v-6H9v6H3z',
+  tower: 'M8 22l1-12H7V4h2v2h2V4h2v2h2V4h2v6h-2l1 12zM11 12h2v3h-2z',
+  cannon: 'M2 20h12v2H2zM4 14a4 4 0 118 0 4 4 0 01-8 0zm4-1.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM9.5 11.3l11-6 1 1.8-11 6z',
+  aagun: 'M3 20h18v2H3zM6 15h12l1 4H5zM10 15l2.5-9 1.5.4-2.2 8.6zM12.5 15.2l5-8.5 1.3.8-4.6 7.9z',
+  bunker: 'M2 20v-5c0-4.4 4.5-8 10-8s10 3.6 10 8v5zM6 14h12v2H6z',
+  fortress: 'M2 22V8h3V5h2v3h2V5h2v3h2V5h2v3h2V5h2v3h3v14h-8v-5h-4v5zM6 11v2h2v-2zm10 0v2h2v-2z',
+  guard: 'M5 22V9l7-5 7 5v13h-4v-6H9v6zM10 10h4v3h-4zM1 20h22v2H1z',
   factory: 'M2 21V10l6 3.5V10l6 3.5V4h3v17zM18 4h3v17h-3z',
   office: 'M5 2h14v20h-5v-4h-4v4H5zM8 5v2h2V5zm6 0v2h2V5zM8 9v2h2V9zm6 0v2h2V9zM8 13v2h2v-2zm6 0v2h2v-2z',
   barracks: 'M2 20h20v2H2zM3 11h18v9H3zM12 2l10 7H2zM11 13h2v7h-2zM6 13h3v3H6zm9 0h3v3h-3z',
@@ -268,3 +274,22 @@ G.BUILDINGS = {
 };
 G.BUILD_ORDER = ['barracks', 'warfactory', 'airbase', 'house', 'factory', 'office'];
 G.buildSlots = T => 4 + (T.type === 'city' ? 2 : T.type === 'resource' ? 1 : 0);
+
+/* ---------- defensive structures (own build plots) ----------
+   names follow each world's place and era */
+G.DEFENSES = {
+  tower:    { icon: 'tower',    max: 2, cost: [120, 200], names: ['מגדלור תצפית', 'מגדל חומה מחול', 'מגדל תצפית מבוצר', 'מגדל בזלת', 'מגדל סריקה'],
+              desc: 'יורה ברגלים התוקפים לפני הקרב · +10% הגנה' },
+  cannon:   { icon: 'cannon',   max: 2, cost: [220, 360], names: ['סוללת תותחי חוף', 'תותחי מבצר', 'סוללת תותחים מבוצרת', 'סוללת תותחי אש', 'צריח לייזר'],
+              desc: 'מפגיז את כלי הרכב והחיילים התוקפים לפני שהם מגיעים' },
+  aagun:    { icon: 'aagun',    max: 2, cost: [200, 340], names: ['סוללת נ״מ חופית', 'סוללת נ״מ', 'סוללת טילי נ״מ', 'סוללת נ״מ', 'מגן פלזמה נגד מטוסים'],
+              desc: 'מפיל כלי טיס תוקפים לפני הקרב' },
+  bunker:   { icon: 'bunker',   max: 2, cost: [150, 260], names: ['בונקר חוף', 'עמדות חול', 'בונקר בטון', 'בונקר בזלת', 'מחסה משוריין'],
+              desc: '+20% הגנה לכל רמה' },
+  fortress: { icon: 'fortress', max: 1, cost: [620],      names: ['מבצר חוף', 'טירת מדבר', 'מצודת קרח', 'מצודת אפר', 'מגדל פיקוד משוריין'],
+              desc: '+45% הגנה, והמגינים יורים חזק יותר ב-15%' },
+  guard:    { icon: 'guard',    max: 1, cost: [160],      names: ['עמדת משמר', 'מחסום אבטחה', 'עמדת שמירה', 'עמדת משמר', 'עמדת אבטחה רובוטית'],
+              desc: 'מוסיף חייל משמר לחיל המצב בכל תור (עד 6)' }
+};
+G.DEF_ORDER = ['fortress', 'cannon', 'aagun', 'tower', 'bunker', 'guard'];
+G.defName = (k, wi) => G.DEFENSES[k].names[wi] || G.DEFENSES[k].names[0];

@@ -551,6 +551,7 @@ G.ctl = {
         <button class="p-close" id="p-close">✕</button></div>
       <div class="p-hint" id="p-hint"></div>
       <div class="p-units">${chips}</div>
+      ${st.d && Object.keys(st.d).length ? `<div class="p-blds p-defs">${G.DEF_ORDER.filter(k => st.d[k]).map(k => `<span class="chip">${G.svg(G.DEFENSES[k].icon)} ${G.defName(k, m.world)}${st.d[k] > 1 ? ' ×' + st.d[k] : ''}</span>`).join('')}</div>` : ''}
       ${st.b && Object.keys(st.b).length ? `<div class="p-blds">${G.BUILD_ORDER.filter(k => st.b[k]).map(k => `<span class="chip" title="${G.BUILDINGS[k].name}">${G.svg(G.BUILDINGS[k].icon)} ${G.BUILDINGS[k].name}${st.b[k] > 1 ? " ×" + st.b[k] : ""}</span>`).join("")}</div>` : ""}
       <div class="p-meta"><span>הכנסה <b>+${inc + incB}</b></span><span>הגנה <b>+${defp}%</b></span><span>ביצור <b>${st.fort}</b></span><span>מכרה <b>${st.mine}</b></span>${shield ? '<span style="color:#7fe3ff">🛡 מוגן</span>' : ''}</div>
       ${st.owner === 0 ? `<div class="p-actions">
@@ -696,14 +697,16 @@ G.ctl = {
       <p>מגרשי בנייה: <b>${used}/${slots}</b> ${T.type === 'city' ? '(עיר: +2 מגרשים)' : T.type === 'resource' ? '(אזור משאבים: +1)' : ''}. מבנים בשטח שנכבש עוברים לכובש.</p>
       ${sect('מרכזי צבא', ['barracks', 'warfactory', 'airbase'].map(bRow).join(''))}
       ${sect('כלכלה ועיר', ['house', 'factory', 'office'].map(bRow).join(''))}
-      ${sect('הגנה ומשאבים (לא תופסים מגרש)', row('fort', 'fort', 'ביצור', '+25% הגנה לכל רמה', st.fort, G.maxFort(0), G.fortCost(Math.min(st.fort, 3), 0), false) + row('mine', 'mine', 'מכרה / באר נפט', `+${15 + (G.meta.has('mine1') ? 5 : 0)} הכנסה לכל רמה`, st.mine, 3, G.mineCost(Math.min(st.mine, 2), 0), false))}
+      ${(() => { st.d = st.d || {}; const dUsed = G.defSlotsUsed(st), dSlots = G.defSlots(T, m), dFull = dUsed >= dSlots;
+        return sect(`הגנה ואבטחה · עמדות ${dUsed}/${dSlots}`, G.DEF_ORDER.map(k => { const D = G.DEFENSES[k], l = st.d[k] || 0; return row(k, D.icon, G.defName(k, m.world), D.desc, l, D.max, D.cost[Math.min(l, D.max - 1)], dFull); }).join('')); })()}
+      ${sect('ביצור ומשאבים (לא תופסים מגרש)', row('fort', 'fort', 'ביצור', '+25% הגנה לכל רמה', st.fort, G.maxFort(0), G.fortCost(Math.min(st.fort, 3), 0), false) + row('mine', 'mine', 'מכרה / באר נפט', `+${15 + (G.meta.has('mine1') ? 5 : 0)} הכנסה לכל רמה`, st.mine, 3, G.mineCost(Math.min(st.mine, 2), 0), false))}
       <div class="m-actions"><button class="btn" id="b-cancel">סגור</button><button class="btn cyan" id="b-rec">${G.svg('inf')} לגיוס</button></div>`);
     document.querySelectorAll('#modal-card [data-k]').forEach(b => b.onclick = () => {
       const k = b.dataset.k;
       if (G.act.build(m, 0, tid, k)) {
         G.sfx.buy();
         this.rend.addFx({ type: 'ring', x: T.cx, y: T.cy, dur: 700, col: '#ffd23f', size: 50 });
-        this.rend.addFx({ type: 'text', x: T.cx, y: T.cy, dur: 1400, text: G.BUILDINGS[k] ? G.BUILDINGS[k].name : (k === 'fort' ? 'ביצור' : 'מכרה'), col: '#ffd23f' });
+        this.rend.addFx({ type: 'text', x: T.cx, y: T.cy, dur: 1400, text: G.BUILDINGS[k] ? G.BUILDINGS[k].name : G.DEFENSES[k] ? G.defName(k, m.world) : (k === 'fort' ? 'ביצור' : 'מכרה'), col: '#ffd23f' });
         G.checkObjectives(m);
         this.refreshHUD(); this.renderPanel(); this.buildDialog(tid);
       }
@@ -765,7 +768,7 @@ G.ctl = {
       }, 60);
     };
     const ch = this.unitChooser(mv, updOdds);
-    const defChips = G.UNIT_ORDER.filter(k => d.units[k] > 0).map(k => `<span class="chip">${G.svg(k)} ${d.units[k]}</span>`).join('') || '<span class="chip">ריק!</span>';
+    const defChips = (G.UNIT_ORDER.filter(k => d.units[k] > 0).map(k => `<span class="chip">${G.svg(k)} ${d.units[k]}</span>`).join('') || '<span class="chip">ללא חיילים</span>') + (d.d ? G.DEF_ORDER.filter(k => d.d[k]).map(k => `<span class="chip def-chip">${G.svg(G.DEFENSES[k].icon)} ${G.defName(k, m.world)}${d.d[k] > 1 ? ' ×' + d.d[k] : ''}</span>`).join('') : '');
     G.ui.modal(`<h2>${G.svg('sword')} תקיפה: ${G.map.terrs[to].name}</h2>
       <p>מגן: <b style="color:${this.ownerColor(d.owner)}">${this.ownerName(d.owner)}</b> · בונוס הגנה +${Math.round((G.defBonus(m, to, mv) - 1) * 100)}%</p>
       <div class="p-units">${defChips}</div>

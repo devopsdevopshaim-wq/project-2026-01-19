@@ -106,6 +106,95 @@ function install({ THREE, makeUnit, mats, geo, mesh, ASSETS, S, topY, Renderer3D
   };
   const ORDER = ['barracks', 'warfactory', 'airbase', 'factory', 'office', 'house'];
 
+  /* ---- defences, styled per world (place & era) ---- */
+  const STONE = ['#cfc3a8', '#c9a36b', '#b9c2cc', '#3e3434', '#3a3f5c'];
+  const stoneMat = wi => mats(STONE[wi]).body;
+  const snowCap = (g, w, d, y) => { const s = mesh(B(w * 1.04, 0.025, d * 1.04), new THREE.MeshStandardMaterial({ color: 0xf4f8ff, roughness: 0.9 }), 0, y, 0); g.add(s); };
+  const crenels = (g, r, y, n, mat) => { for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; g.add(mesh(B(0.045, 0.05, 0.045), mat, Math.cos(a) * r, y, Math.sin(a) * r)); } };
+  const DEF = {
+    tower(color, lvl, wi) {
+      const g = new THREE.Group(), m = stoneMat(wi);
+      if (wi === 4) {
+        g.add(mesh(geo('pylon', () => new THREE.CylinderGeometry(0.04, 0.07, 0.62, 6).translate(0, 0.31, 0)), M.steel));
+        const eye = mesh(geo('eye', () => new THREE.SphereGeometry(0.06, 12, 8)), mats(color).glow, 0, 0.66, 0); eye.name = 'spin'; g.add(eye);
+      } else {
+        g.add(mesh(geo('tw' + wi, () => new THREE.CylinderGeometry(0.1, 0.13, 0.52, 10).translate(0, 0.26, 0)), m));
+        crenels(g, 0.1, 0.52, 8, m);
+        if (wi === 0) g.add(mesh(geo('lamp0', () => new THREE.SphereGeometry(0.05, 10, 8)), mats('#ffe9a8').light, 0, 0.6, 0));   // coastal lighthouse lamp
+        if (wi === 2) snowCap(g, 0.2, 0.2, 0.52);
+      }
+      if (lvl > 1) { const g2 = DEF.tower(color, 1, wi); g2.position.set(0.28, 0, 0.12); g2.scale.setScalar(0.8); g.add(g2); }
+      const f = flag(color); f.position.set(0, wi === 4 ? 0.7 : 0.56, 0); f.scale.setScalar(0.7); g.add(f);
+      return g;
+    },
+    cannon(color, lvl, wi) {
+      const g = new THREE.Group();
+      for (let i = 0; i < lvl; i++) {
+        const x = (i - (lvl - 1) / 2) * 0.34;
+        let gun = null;
+        if (wi === 4) gun = fromModel('turret_cannon', 0.26, color);
+        if (gun) { gun.position.x = x; g.add(gun); continue; }
+        const pad = mesh(geo('cpad', () => new THREE.CylinderGeometry(0.16, 0.18, 0.06, 12).translate(0, 0.03, 0)), wi === 1 || wi === 0 ? M.sand : M.concrete, x, 0, 0); g.add(pad);
+        for (let k = 0; k < 6; k++) { const a = Math.PI * 0.2 + k / 6 * Math.PI * 1.6; g.add(mesh(geo('sbag2', () => new THREE.CapsuleGeometry(0.025, 0.06, 2, 6).rotateZ(Math.PI / 2)), M.sand, x + Math.cos(a) * 0.16, 0.08, Math.sin(a) * 0.16)); }
+        const bar = mesh(geo('cbar', () => new THREE.CylinderGeometry(0.022, 0.028, 0.34, 8).rotateZ(Math.PI / 2).translate(0.17, 0, 0)), M.darkc, x, 0.12, 0); bar.rotation.z = 0.35; bar.name = 'barrel'; g.add(bar);
+        g.add(mesh(geo('cwheel', () => new THREE.CylinderGeometry(0.05, 0.05, 0.03, 10).rotateX(Math.PI / 2)), M.darkc, x, 0.06, 0.06));
+      }
+      return g;
+    },
+    aagun(color, lvl, wi) {
+      const g = new THREE.Group();
+      for (let i = 0; i < lvl; i++) {
+        const u = wi === 4 ? fromModel('turret_gun', 0.24, color) : makeUnit('aa', color);
+        if (!u) continue;
+        const fr = u.getObjectByName && u.getObjectByName('fring'); if (fr) fr.visible = false;
+        u.position.x = (i - (lvl - 1) / 2) * 0.36; g.add(u);
+      }
+      g.add(mesh(B(0.5 + lvl * 0.1, 0.02, 0.32), wi === 4 ? M.steel : M.concrete));
+      return g;
+    },
+    bunker(color, lvl, wi) {
+      const g = new THREE.Group(), m = wi === 1 ? M.sand : wi === 3 ? stoneMat(3) : M.concrete;
+      for (let i = 0; i < lvl; i++) {
+        const b = mesh(geo('bnk', () => new THREE.CylinderGeometry(0.17, 0.2, 0.12, 8, 1).translate(0, 0.06, 0)), m, (i - (lvl - 1) / 2) * 0.4, 0, 0);
+        g.add(b);
+        g.add(mesh(B(0.16, 0.022, 0.02), M.asphalt, (i - (lvl - 1) / 2) * 0.4, 0.07, 0.17));   // firing slit
+        if (wi === 2) { const s = mesh(geo('bsnow', () => new THREE.CylinderGeometry(0.14, 0.17, 0.03, 8)), new THREE.MeshStandardMaterial({ color: 0xf4f8ff }), (i - (lvl - 1) / 2) * 0.4, 0.125, 0); g.add(s); }
+      }
+      return g;
+    },
+    fortress(color, lvl, wi) {
+      const g = new THREE.Group(), m = stoneMat(wi);
+      if (wi === 4) {
+        g.add(mesh(geo('ftw4', () => new THREE.CylinderGeometry(0.16, 0.24, 0.9, 6).translate(0, 0.45, 0)), M.steel));
+        const ring = mesh(geo('fring4', () => new THREE.TorusGeometry(0.2, 0.015, 8, 24).rotateX(Math.PI / 2)), mats(color).glow, 0, 0.7, 0); ring.name = 'spin'; g.add(ring);
+        g.add(mesh(B(0.7, 0.05, 0.7), M.asphalt));
+      } else {
+        const W = 0.62, H = 0.2;
+        [[0, -W / 2, W, 0.05], [0, W / 2, W, 0.05], [-W / 2, 0, 0.05, W], [W / 2, 0, 0.05, W]].forEach(([x, z, w, d]) => g.add(mesh(B(w, H, d), m, x, 0, z)));
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+          const t = mesh(geo('ftw' + wi, () => new THREE.CylinderGeometry(0.075, 0.085, 0.34, 8).translate(0, 0.17, 0)), m, sx * W / 2, 0, sz * W / 2); g.add(t);
+          crenels(g.children[g.children.length - 1].parent === g ? g : g, 0, 0, 0, m);
+          for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; g.add(mesh(B(0.03, 0.04, 0.03), m, sx * W / 2 + Math.cos(a) * 0.07, 0.34, sz * W / 2 + Math.sin(a) * 0.07)); }
+        });
+        g.add(mesh(geo('keep' + wi, () => new THREE.BoxGeometry(0.22, 0.36, 0.22).translate(0, 0.18, 0)), m));
+        if (wi === 2) snowCap(g, 0.22, 0.22, 0.36);
+        if (wi === 3) g.add(mesh(geo('lavaglow', () => new THREE.SphereGeometry(0.04, 8, 6)), mats('#ff6a1f').glow, 0, 0.4, 0));
+        const f = flag(color); f.position.set(0, 0.36, 0); g.add(f);
+      }
+      return g;
+    },
+    guard(color, lvl, wi) {
+      const g = new THREE.Group();
+      g.add(mesh(B(0.14, 0.18, 0.14), wi === 4 ? M.steel : M.olive));
+      g.add(mesh(B(0.18, 0.02, 0.18), M.roof, 0, 0.18, 0));
+      const bar = mesh(B(0.4, 0.018, 0.018), new THREE.MeshStandardMaterial({ color: 0xd23a2a }), 0.26, 0.1, 0.12); bar.name = 'gate'; g.add(bar);
+      g.add(mesh(B(0.02, 0.3, 0.02), M.steel, -0.12, 0, 0.12));
+      g.add(mesh(geo('flood', () => new THREE.SphereGeometry(0.025, 8, 6)), mats('#fff4cc').light, -0.12, 0.31, 0.12));
+      return g;
+    }
+  };
+  G.__defMake = (k, color, lvl, wi) => DEF[k](color, lvl, wi);
+
   P.syncBuildings = function (match) {
     if (!this.map || !this.scene) return;
     if (!this.bldLayer || this.bldLayer.parent !== this.scene) { this.bldLayer = new THREE.Group(); this.scene.add(this.bldLayer); this.bldMap = {}; }
@@ -114,19 +203,19 @@ function install({ THREE, makeUnit, mats, geo, mesh, ASSETS, S, topY, Renderer3D
       const st = match.terr[T.id];
       const hide = st.owner === -2 || this.hidden.has(T.id);
       const color = st.owner >= 0 ? match.factions[st.owner].color : G.NEUTRAL_COLOR;
-      const key = hide ? 'x' : color + JSON.stringify(st.b || {}) + (ASSETS.ready ? 'a' : '');
+      const key = hide ? 'x' : color + JSON.stringify(st.b || {}) + JSON.stringify(st.d || {}) + (ASSETS.ready ? 'a' : '');
       const cur = this.bldMap[T.id];
       if (cur && cur.key === key) continue;
       if (cur) this.bldLayer.remove(cur.group);
       const group = new THREE.Group(); group.userData.chimneys = [];
-      if (!hide && st.b) {
+      if (!hide && (st.b || st.d)) {
         // building plots: the hexes nearest the centre, skipping the centre (units) and mountains
         const c = map.hexes[T.center];
         const plots = T.hexes.filter(i => i !== T.center && map.hexes[i].terr !== 'mountain').map(i => map.hexes[i])
           .sort((a, b) => ((a.x - c.x) ** 2 + (a.y - c.y) ** 2) - ((b.x - c.x) ** 2 + (b.y - c.y) ** 2));
         let pi = 0;
         for (const k of ORDER) {
-          const lvl = st.b[k] || 0; if (!lvl) continue;
+          const lvl = (st.b && st.b[k]) || 0; if (!lvl) continue;
           const hx = plots[pi % Math.max(1, plots.length)] || c; pi++;
           const obj = MAKE[k](color, lvl, map.wi);
           const off = plots.length ? 0 : 0.45;
@@ -135,6 +224,19 @@ function install({ THREE, makeUnit, mats, geo, mesh, ASSETS, S, topY, Renderer3D
           obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
           group.add(obj);
           if (obj.userData.chimneys) obj.userData.chimneys.forEach(p => group.userData.chimneys.push({ obj, p }));
+        }
+        // defences go on the outer plots, facing outward
+        const outer = plots.slice().reverse();
+        let oi = 0;
+        for (const k of G.DEF_ORDER) {
+          const lvl = (st.d && st.d[k]) || 0; if (!lvl) continue;
+          const hx = outer[oi % Math.max(1, outer.length)] || c; oi++;
+          const obj = DEF[k](color, lvl, map.wi);
+          obj.scale.multiplyScalar(1.4);
+          obj.position.set(hx.x * S + (outer.length ? 0 : -0.45), topY(hx), hx.y * S + (outer.length ? 0 : -0.45));
+          obj.rotation.y = Math.atan2(-(hx.y - c.y), hx.x - c.x);
+          obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          group.add(obj);
         }
       }
       this.bldLayer.add(group);
@@ -154,7 +256,7 @@ function install({ THREE, makeUnit, mats, geo, mesh, ASSETS, S, topY, Renderer3D
           if (Math.random() < 0.55) this.puff('smoke', ch.obj.localToWorld(ch.p.clone()), { size: 0.08, grow: 3, life: 3.2, vel: V(0.06, 0.22, 0.02), op: 0.5, tint: 0x9a9690, drag: 0.2, rise: 0.04 });
         }
       }
-      if (this.bldLayer) this.bldLayer.traverse(o => { if (o.name === 'flag') o.rotation.y = Math.sin(t * 3 + o.id) * 0.35; if (o.name === 'crane') o.rotation.y = Math.sin(t * 0.3 + o.id) * 0.8; });
+      if (this.bldLayer) this.bldLayer.traverse(o => { if (o.name === 'spin') o.rotation.y += 0.02; if (o.name === 'gate') o.rotation.z = Math.max(0, Math.sin(t * 0.4 + o.id)) * 1.2; if (o.name === 'flag') o.rotation.y = Math.sin(t * 3 + o.id) * 0.35; if (o.name === 'crane') o.rotation.y = Math.sin(t * 0.3 + o.id) * 0.8; });
     }
     return origFrame.call(this, now, match, ui);
   };

@@ -19,3 +19,4 @@ They were optimized for the web (quantized geometry, 512px WebP textures).
 | b_antenna_1 | Cyberpunk Game Kit |
 | apc.glb, mlrs.glb | Animated Tanks Pack (Tank2, Tank3) |
 | bomber.glb | Ultimate Spaceships Pack (Insurgent) |
+| turret_cannon.glb, turret_gun.glb | Cyberpunk Game Kit (Turret_Cannon, Turret_Gun) |

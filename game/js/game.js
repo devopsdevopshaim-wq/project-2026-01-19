@@ -45,6 +45,7 @@ G.meta = {
 };
 
 /* ---------- helpers ---------- */
+G.countUnits = G.countUnits || (u => { let n = 0; for (const k in u) n += u[k]; return n; });
 G.activeTids = m => G.map.terrs.filter(T => m.terr[T.id].owner !== -2).map(T => T.id);
 G.ownedBy = (m, fi) => G.map.terrs.filter(T => m.terr[T.id].owner === fi).map(T => T.id);
 G.isAdj = (a, b) => G.map.terrs[a].adj.includes(b);
@@ -64,6 +65,8 @@ G.bfsDist = function (m, sources, passable) {
 };
 
 G.slotsUsed = st => Object.values(st.b || {}).reduce((a, b) => a + b, 0);
+G.defSlotsUsed = st => Object.values(st.d || {}).reduce((a, b) => a + b, 0);
+G.defSlots = (T, m) => 3 + (T.type === 'city' ? 1 : 0) + (m && m.factions.some(f => f.capital === T.id) ? 1 : 0);
 G.buildingCost = (kind, lvl, fi) => Math.round(G.BUILDINGS[kind].cost[lvl] * (fi === 0 && G.meta.has('mine1') && (kind === 'factory' || kind === 'house') ? 0.8 : 1));
 G.canRecruitAt = (st, type) => !!(st.b && st.b[G.UNIT_BUILDING[type]]);
 G.fortCost = (lvl, fi) => Math.round([100, 180, 280, 400][lvl] * (fi === 0 && G.meta.has('fort1') ? 0.7 : 1));
@@ -103,7 +106,7 @@ G.newMatch = function (world, country, diff) {
 
   const m = {
     v: 2, mode, world, country, diff, turn: 1, factions, officePts: 0,
-    terr: map.terrs.map(T => ({ owner: actSet.has(T.id) ? -1 : -2, units: {}, tired: {}, fort: 0, mine: 0, b: {} })),
+    terr: map.terrs.map(T => ({ owner: actSet.has(T.id) ? -1 : -2, units: {}, tired: {}, fort: 0, mine: 0, b: {}, d: {} })),
     cd: { strike: 0, reinf: 0, shield: 0, emp: 0 },
     shields: {}, stats: { captured: 0, battlesWon: 0, battlesLost: 0, built: 0, lostTerr: 0, recruited: 0 },
     objectives: [], over: false, startTime: Date.now()
@@ -146,6 +149,7 @@ G.newMatch = function (world, country, diff) {
       m.terr[s].fort = 1;
       m.terr[s].b = { barracks: 1, warfactory: 1, house: 1 };
       if (wd.tier.some(t => G.UNIT_BUILDING[t] === 'airbase')) m.terr[s].b.airbase = 1;
+      m.terr[s].d = world >= 2 ? { bunker: 1, cannon: 1 } : { tower: 1 };
       extra.forEach(t => give(fi, t, { inf: Math.round(2 * k) }));
     }
   });
@@ -161,7 +165,7 @@ G.newMatch = function (world, country, diff) {
     st.units = u;
     if (T.type === 'mountain' || (T.type === 'city' && R() < 0.4)) st.fort = 1;
     // spoils of war: some neutral land already has buildings worth capturing
-    if (T.type === 'city') st.b = R() < 0.5 ? { house: 1, office: 1 } : { house: 2 };
+    if (T.type === 'city') { st.b = R() < 0.5 ? { house: 1, office: 1 } : { house: 2 }; st.d = { tower: 1 }; }
     else if (T.type === 'resource') st.b = { factory: 1 };
     else if (R() < 0.15) st.b = { house: 1 };
   }
@@ -234,6 +238,13 @@ G.act = {
       if (st.mine >= 3) return false;
       const c = G.mineCost(st.mine, fi); if (f.credits < c) return false;
       f.credits -= c; st.mine++;
+    } else if (G.DEFENSES[kind]) {
+      const D = G.DEFENSES[kind];
+      st.d = st.d || {};
+      const lvl = st.d[kind] || 0;
+      if (lvl >= D.max || G.defSlotsUsed(st) >= G.defSlots(G.map.terrs[tid], m)) return false;
+      const c = D.cost[lvl]; if (f.credits < c) return false;
+      f.credits -= c; st.d[kind] = lvl + 1;
     } else {
       const B = G.BUILDINGS[kind]; if (!B) return false;
       st.b = st.b || {};
@@ -269,11 +280,14 @@ G.act = {
     for (const k in send) { a.units[k] -= send[k]; if (!a.units[k]) delete a.units[k]; if (a.tired[k] > a.units[k]) a.tired[k] = a.units[k] || 0; }
     const prevOwner = d.owner;
     let res;
-    if (!G.countUnits(d.units)) res = { rounds: [], A: send, D: {}, win: true, empty: true };
+    const armed = d.d && (d.d.cannon || d.d.tower || d.d.aagun);
+    if (!G.countUnits(d.units) && !armed) res = { rounds: [], A: send, D: {}, win: true, empty: true };
     else res = G.resolveBattle(m, send, fi, to);
     if (res.win) {
       d.owner = fi; d.units = G.cloneU(res.A); d.tired = G.cloneU(res.A);
       d.fort = Math.max(0, d.fort - 1);
+      // defences are wrecked in the assault; what survives changes hands
+      if (d.d) for (const k of Object.keys(d.d)) { for (let l = d.d[k]; l > 0; l--) if (Math.random() < 0.45) d.d[k]--; if (!d.d[k]) delete d.d[k]; }
       // fighting damages one building; the rest change hands
       if (d.b && !res.empty) { const ks = Object.keys(d.b).filter(k => d.b[k] > 0); if (ks.length && Math.random() < 0.35) { const k = ks[Math.floor(Math.random() * ks.length)]; d.b[k]--; if (!d.b[k]) delete d.b[k]; } }
       G.onCapture(m, fi, to, prevOwner);
@@ -322,6 +336,10 @@ G.missionKey = m => 'w' + m.world + (m.mode === 'world' ? 'all' : 'c' + m.countr
 G.startTurn = function (m, fi) {
   const f = m.factions[fi];
   if (!(m.turn === 1 && fi === 0)) f.credits += G.incomeOf(m, fi);
+  for (const T of G.map.terrs) {   // security posts raise a militia garrison
+    const st = m.terr[T.id];
+    if (st.owner === fi && st.d && st.d.guard && G.countUnits(st.units) < 6) st.units.inf = (st.units.inf || 0) + 1;
+  }
   if (fi === 0 && m.turn > 1) {   // office towers generate research points
     const offices = G.ownedBy(m, 0).reduce((s, t) => s + ((m.terr[t].b && m.terr[t].b.office) || 0), 0);
     m.officePts = (m.officePts || 0) + offices;

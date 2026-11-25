@@ -213,7 +213,7 @@ const UNIT_CFG = {
   bomber:   { file: 'bomber', size: 0.95, yaw: Math.PI / 2, tint: 0.35, air: 2.1, ring: 1.5 }
 };
 const BUILDINGS = ['b_building1_small', 'b_building2_large', 'b_building2_small', 'b_building3_big', 'b_building3_small', 'b_building4', 'b_house2', 'b_building1_large', 'b_house1', 'b_4story', 'b_6story_stack'];
-const SCENERY = ['palm1', 'palm2', 'pine1', 'pine2', 'tree1', 'tree2', 'cactus1', 'cactus2', 'deadtree', 'mountain1', 'mountain2', 'gold', 'ship', 'boat', 'b_antenna_1', ...BUILDINGS];
+const SCENERY = ['turret_cannon', 'turret_gun', 'palm1', 'palm2', 'pine1', 'pine2', 'tree1', 'tree2', 'cactus1', 'cactus2', 'deadtree', 'mountain1', 'mountain2', 'gold', 'ship', 'boat', 'b_antenna_1', ...BUILDINGS];
 const ASSETS = { ready: false, units: {}, scenery: {} };
 G.POSE = G.POSE || { axis: 'x', l: -1.2, r: -1.2 };
 function poseArms(root) {

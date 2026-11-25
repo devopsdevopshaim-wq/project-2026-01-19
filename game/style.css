@@ -262,3 +262,5 @@ body.cine .hud-top, body.cine .panel, body.cine .end-turn, body.cine .ability-ba
 .b-sect { font-family: 'Secular One', sans-serif; font-size: 15px; margin: 14px 0 2px; color: #d9ccff; }
 .p-blds { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 2px; }
 .p-blds .chip { font-size: 11.5px; padding: 3px 8px; background: rgba(255,210,63,.12); }
+
+.p-defs .chip, .def-chip { background: rgba(255,90,60,.16) !important; color: #ffd2c4; }

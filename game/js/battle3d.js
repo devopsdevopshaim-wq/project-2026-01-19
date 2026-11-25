@@ -392,6 +392,23 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
         w.rotation.y = yawTo(V(), perp); this.fxLayer.add(w); walls.push(w);
       }
       const bigAssault = G.countUnits(opts.att.units) >= 7;
+      // the defender's structures stand in front of their troops, facing the assault
+      const defObjs = [];
+      const defs = (opts.result && opts.result.defs) || {};
+      if (G.__defMake) {
+        const kinds = G.DEF_ORDER.filter(k => defs[k] && k !== 'guard');
+        kinds.forEach((k, i) => {
+          const o = G.__defMake(k, opts.def.color, Math.min(defs[k], 2), this.map.wi);
+          o.scale.multiplyScalar(1.15);
+          o.position.copy(C).addScaledVector(dir, k === 'fortress' ? 0.9 : -0.25).addScaledVector(perp, (i - (kinds.length - 1) / 2) * 0.9 + (k === 'fortress' ? 0 : 0.2));
+          o.position.y = C.y;
+          o.rotation.y = Math.atan2(dir.z, -dir.x);
+          o.traverse(q => { if (q.isMesh) q.castShadow = true; });
+          o.userData = { kind: k, cool: rnd(0.3, 1.2) };
+          this.fxLayer.add(o); defObjs.push(o); walls.push(o);
+        });
+      }
+      const defMuzzle = o => o.position.clone().add(V(0, o.userData.kind === 'tower' ? 0.55 : o.userData.kind === 'fortress' ? 0.4 : 0.18, 0)).addScaledVector(dir, -0.15);
       if (playerSide === 'A') { if (bigAssault && G.sfx.warCry) G.sfx.warCry(false); else G.sfx.voice('go_go_go'); setTimeout(() => G.sfx.voice('target_engaged', true), 2600); }
       else { G.sfx.voice('look_out'); setTimeout(() => G.sfx.voice('cover_me'), 2200); }
 
@@ -545,6 +562,19 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
             G.sfx.shot(ud.type);
             if (kind === 'arty' && Math.random() < 0.2) G.sfx.voice('fire_in_the_hole', ud.side !== playerSide);
           }
+          if (fighting) for (const o of defObjs) {
+            o.userData.cool -= dt; if (o.userData.cool > 0) continue;
+            const k = o.userData.kind, att = alive('A'); if (!att.length) break;
+            const air = att.filter(u => CLS(u.userData.type) === 'air'), gnd = att.filter(u => CLS(u.userData.type) !== 'air');
+            const pool2 = k === 'aagun' ? air : gnd; if (!pool2.length) { o.userData.cool = 1; continue; }
+            const tg = pool2[Math.floor(Math.random() * pool2.length)];
+            const kind = k === 'aagun' ? 'flak' : k === 'tower' ? 'bullet' : 'shell';
+            o.userData.cool = kind === 'bullet' ? rnd(1, 1.8) : rnd(2.4, 3.6);
+            const to = kind === 'flak' ? tg.position.clone().add(V(rnd(-0.3, 0.3), rnd(-0.05, 0.3), rnd(-0.3, 0.3))) : aimPt(tg).add(V(rnd(-0.35, 0.35), 0, rnd(-0.35, 0.35)));
+            if (kind !== 'flak') to.y = Math.max(C.y, Math.min(to.y, C.y + 0.05));
+            this.fire({ from: defMuzzle(o), to, kind, tracer: true, onHit: p => kind === 'flak' ? this.puff('smoke', p, { size: 0.16, grow: 1.6, life: 1.6, tint: 0x232323, op: 0.85 }) : kind === 'shell' ? this.dirtImpact(p, 0.55) : this.puff('smoke', p, { size: 0.05, grow: 2.5, life: 0.7, tint: this.dustColor(), op: 0.7, vel: V(0, 0.25, 0) }) });
+            G.sfx.shot(kind === 'shell' ? 'tank' : kind === 'flak' ? 'aa' : 'inf');
+          }
           for (const u of squad) { const ud = u.userData; if (ud.recoil > 0) { u.position.addScaledVector(V(Math.cos(ud.yaw), 0, -Math.sin(ud.yaw)), -ud.recoil); ud.recoil *= 0.5; if (ud.recoil < 0.003) ud.recoil = 0; } }
           // schedule the killing shots that match the battle result
           const round = Math.floor((t - APPROACH) / RD);
@@ -558,15 +588,22 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
                 const totalM = squad.filter(u => u.userData.side === side && u.userData.type === ty).length;
                 const keepN = (cur[side][ty] || 0) <= 0 ? 0 : Math.max(1, Math.ceil(totalM * cur[side][ty] / initial[side][ty]));
                 const l = by[ty];
-                while (l.length > keepN) kills.push({ v: l.pop(), at: t + rnd(0.3, RD * 0.85) });
+                while (l.length > keepN) kills.push({ v: l.pop(), at: t + rnd(0.3, RD * 0.85), pre: !!res.rounds[round].pre });
               }
             }
-            if (round === 0 && walls.length && res.win) setTimeout(() => walls.forEach(w => { if (!finished && w.visible) { this.dirtImpact(w.position.clone(), 0.4); w.visible = false; } }), 900);
+            if (round === 0 && walls.length && res.win) setTimeout(() => walls.forEach(w => { if (!finished && w.visible && !w.userData.kind) { this.dirtImpact(w.position.clone(), 0.4); w.visible = false; } }), 900);
           }
           for (const k of kills) {
             if (k.done || t < k.at) continue;
             k.done = true;
             const v = k.v; if (!v.userData.alive) continue;
+            if (k.pre && defObjs.length) {
+              const air = CLS(v.userData.type) === 'air';
+              const o = defObjs.find(d => air ? d.userData.kind === 'aagun' : d.userData.kind !== 'aagun') || defObjs[0];
+              this.fire({ from: defMuzzle(o), to: aimPt(v), kind: air ? 'missile' : 'shell', tracer: true, onHit: () => kill(v) });
+              G.sfx.shot(air ? 'aa' : 'tank');
+              continue;
+            }
             const shooters = alive(v.userData.side === 'A' ? 'D' : 'A');
             const s = shooters.find(u => (PREF[u.userData.type] || []).includes(CLS(v.userData.type))) || shooters[0];
             if (!s) { kill(v); continue; }
@@ -583,6 +620,7 @@ function install({ THREE, makeUnit, mats, geo, mesh, TEX, S, Renderer3D }) {
             ended = t;
             banner.textContent = opts.banner; banner.className = 'battle-banner show ' + (opts.good ? 'good' : 'bad');
             G.sfx.battleEnd(opts.good);
+            if (res.win) defObjs.forEach((o, i) => setTimeout(() => { if (!finished) { this.explode(o.position.clone().add(V(0, 0.1, 0)), 0.8); o.traverse(q => { if (q.isMesh) q.material = mats('#000').burnt; }); } }, 200 + i * 250));
           }
           if (ended && res.win) for (const u of alive('A')) { const goal = C.clone().addScaledVector(u.position.clone().sub(C), 0.5); goal.y = u.position.y; u.position.lerp(goal, dt * 0.8); }
           if (ended && !res.win) for (const u of alive('A')) u.position.lerp(u.userData.start, dt * 0.5);

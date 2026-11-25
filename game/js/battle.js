@@ -27,7 +27,8 @@ G.defBonus = function (match, tid, attUnits) {
   const T = G.map.terrs[tid], st = match.terr[tid];
   let fort = st.fort * 0.25;
   if (attUnits.art) fort *= Math.max(0.2, 1 - attUnits.art * 0.15);
-  return 1 + G.TTYPES[T.type].def + fort;
+  const dd = st.d || {};
+  return 1 + G.TTYPES[T.type].def + fort + (dd.bunker || 0) * 0.2 + (dd.fortress ? 0.45 : 0) + (dd.tower || 0) * 0.1;
 };
 
 G._damage = function (X, Y, mul) {
@@ -69,6 +70,21 @@ G.resolveBattle = function (match, attUnits, attOwner, tid, rand = Math.random) 
   const extraD = (T.type === 'mountain' || T.type === 'city') ? { commando: 1.4 } : null;
   const rounds = [];
   const K = 0.55;
+  // defensive structures open fire before the armies clash
+  const dd = st.d || {}, defs = G.cloneU(dd);
+  if (dd.fortress) dm.atk *= 1.15;
+  if ((dd.cannon || dd.aagun || dd.tower) && G.countUnits(A)) {
+    const pools = {}; let tot = 0;
+    for (const k in A) { const c = G.UNITS[k].cls; const hp = A[k] * G.UNITS[k].hp; pools[c] = (pools[c] || 0) + hp; tot += hp; }
+    const dmg = {}, add = (c, v) => { if (pools[c]) dmg[c] = (dmg[c] || 0) + v; };
+    const ground = ['inf', 'armor', 'art', 'aa'].filter(c => pools[c]), gtot = ground.reduce((a, c) => a + pools[c], 0);
+    const w = 1 + match.world * 0.15;
+    if (dd.cannon && gtot) ground.forEach(c => add(c, 17 * dd.cannon * w * (pools[c] / gtot) * (c === 'armor' ? 1.3 : 1) * (0.8 + rand() * 0.4)));
+    if (dd.tower) add('inf', 9 * dd.tower * w * (0.8 + rand() * 0.4));
+    if (dd.aagun) add('air', 26 * dd.aagun * w * (0.8 + rand() * 0.4));
+    const lossA = G._apply(A, dmg, am.hp, rand);
+    rounds.push({ lossA, lossD: {}, A: G.cloneU(A), D: G.cloneU(D), pre: true });
+  }
   for (let r = 0; r < 6; r++) {
     if (!G.countUnits(A) || !G.countUnits(D)) break;
     const dA = G._damage(A, D, am.atk * K * (0.8 + rand() * 0.4));
@@ -78,11 +94,12 @@ G.resolveBattle = function (match, attUnits, attOwner, tid, rand = Math.random) 
     rounds.push({ lossA, lossD, A: G.cloneU(A), D: G.cloneU(D) });
   }
   const aLeft = G.countUnits(A), dLeft = G.countUnits(D);
-  return { rounds, A, D, win: aLeft > 0 && dLeft === 0, bonus };
+  return { rounds, A, D, win: aLeft > 0 && dLeft === 0, bonus, defs };
 };
 
 G.winChance = function (match, attUnits, attOwner, tid, n = 160) {
-  if (!G.countUnits(match.terr[tid].units)) return 1;
+  const dd = match.terr[tid].d || {};
+  if (!G.countUnits(match.terr[tid].units) && !(dd.cannon || dd.tower || dd.aagun)) return 1;
   let w = 0;
   for (let i = 0; i < n; i++) if (G.resolveBattle(match, attUnits, attOwner, tid).win) w++;
   return w / n;
