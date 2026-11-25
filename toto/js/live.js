@@ -18,7 +18,7 @@ const SOCCER_LEAGUE_HE = {
   'mex.1': 'מקסיקו', 'ksa.1': 'סעודיה', 'afc.champions': 'ליגת האלופות אסיה', 'afc.cup': 'גביע אסיה', 'conmebol.libertadores': 'ליברטדורס',
   'fifa.world': 'מונדיאל', 'fifa.worldq.uefa': 'מוקדמות מונדיאל', 'uefa.nations': 'ליגת האומות', 'fifa.friendly': 'ידידות',
 };
-const LIVE = { events: [], at: 0, ok: null, open: false, tab: 'live', sport: 'all', timer: null, busy: false };
+const LIVE = { events: [], at: 0, ok: null, open: false, tab: 'live', sport: 'all', timer: null, busy: false, bound: false, err: '' };
 
 function liveLeagueOf(ev) {
   for (const l of ev.links || []) { const m = /\/league\/([a-z0-9._-]+)/i.exec(l.href || ''); if (m) return m[1]; }
@@ -58,7 +58,12 @@ async function fetchLive() {
   const res = await Promise.allSettled(LIVE_SOURCES.map(s => fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/${s.path}/scoreboard?dates=${ymd}`, 12000).then(j => parseLive(j, s))));
   const ok = res.filter(r => r.status === 'fulfilled');
   LIVE.busy = false;
-  if (!ok.length) { LIVE.ok = false; renderLiveDock(); scheduleLive(); return; }
+  if (!ok.length) {
+    LIVE.ok = false;
+    const r0 = res[0];
+    LIVE.err = r0 && r0.reason ? String(r0.reason.message || r0.reason) : '';
+    renderLiveDock(); scheduleLive(); return;
+  }
   LIVE.ok = true; LIVE.at = Date.now();
   LIVE.events = ok.flatMap(r => r.value);
   feedLiveIntoLeagues();
@@ -133,8 +138,9 @@ function renderLiveDock() {
   const mine = ev.filter(e => formPicksFor(e));
   const tick = (live.length ? live : ev.filter(e => e.state === 'pre').slice(0, 12)).slice(0, 30);
   const tickHtml = tick.map(e => `<span class="tk${formPicksFor(e) ? ' mine' : ''}">${e.sport === 'basketball' ? '🏀' : '⚽'} ${esc(e.homeHe)} <b dir="ltr">${e.state === 'pre' ? e.t : `${e.as}:${e.hs}`}</b> ${esc(e.awayHe)}${e.state === 'in' ? ` <em>${esc(e.clock || '')}</em>` : ''}</span>`).join('');
+  const inArtifact = /claude\.ai|claudeusercontent|claude\.site/.test(location.hostname);
   const head = LIVE.ok === false
-    ? '<span class="lv-off">תוצאות חיות זמינות באתר המלא (בגרסה הזו הדפדפן חוסם את שרת התוצאות)</span>'
+    ? `<span class="lv-off">${inArtifact ? 'תוצאות חיות זמינות באתר המלא ב־GitHub (כאן הדפדפן חוסם את שרת התוצאות)' : 'אין חיבור לשרת התוצאות כרגע'}</span>${inArtifact ? '' : '<span class="lv-retry" role="button" tabindex="0" id="lv-retry">נסה שוב</span>'}`
     : LIVE.ok == null ? '<span class="lv-off">טוען תוצאות…</span>'
     : `<span class="lv-badge${live.length ? ' on' : ''}"><i class="pulse"></i>${live.length ? `${live.length} חי` : 'אין משחקים חיים'}</span>
        <div class="ticker" aria-hidden="true"><div class="ticker-in${tick.length > 2 ? ' run' : ''}" style="--n:${tick.length}">${tickHtml}${tick.length > 2 ? tickHtml : ''}</div></div>`;
@@ -164,9 +170,11 @@ function renderLiveDock() {
 }
 
 function bindLiveDock() {
-  const dock = document.getElementById('live-dock'); if (!dock) return;
+  const dock = document.getElementById('live-dock'); if (!dock || LIVE.bound) return;
+  LIVE.bound = true;
   dock.addEventListener('click', e => {
-    if (e.target.closest('#lv-toggle')) { LIVE.open = !LIVE.open; renderLiveDock(); return; }
+    if (e.target.closest('#lv-retry')) { e.stopPropagation(); LIVE.ok = null; renderLiveDock(); fetchLive(); return; }
+    if (e.target.closest('#lv-toggle')) { if (!LIVE.ok) return; LIVE.open = !LIVE.open; renderLiveDock(); return; }
     const t = e.target.closest('[data-lvtab]'); if (t) { LIVE.tab = t.dataset.lvtab; renderLiveDock(); return; }
     const s = e.target.closest('[data-lvsport]'); if (s) { LIVE.sport = s.dataset.lvsport; renderLiveDock(); }
   });
@@ -174,3 +182,6 @@ function bindLiveDock() {
   renderLiveDock();
   fetchLive();
 }
+
+// Start on its own as soon as the page is parsed, so the dock shows even if the rest of the app is still loading.
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindLiveDock); else bindLiveDock();

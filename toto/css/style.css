@@ -361,3 +361,5 @@ tr.tier-on td { background: var(--good-soft); }
 .wrap { padding-bottom: 110px; }
 @media (max-width: 820px) { .wrap { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; } .toast { bottom: calc(118px + env(safe-area-inset-bottom, 0px)); } }
 @media (max-width: 420px) { .lv-row { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr); } .lv-row .pick.sm { grid-column: 1 / -1; justify-self: center; } }
+
+.lv-retry { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: .78rem; cursor: pointer; }
