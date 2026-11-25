@@ -121,6 +121,8 @@ function parseEspnEvents(json) {
       home: (home.team && (home.team.displayName || home.team.name)) || '?',
       away: (away.team && (away.team.displayName || away.team.name)) || '?',
       hg: done ? num(home.score) : null, ag: done ? num(away.score) : null,
+      // in-progress score and clock (state 'in'), used for the live status on the form
+      live: st.state === 'in' ? { hg: num(home.score) || 0, ag: num(away.score) || 0, clock: (c.status && c.status.displayClock) || st.shortDetail || '' } : null,
       state: st.state || '', status: st.shortDetail || st.description || '',
     });
   }
@@ -158,17 +160,37 @@ function mergeEvents(L, events) {
     const k = h + '|' + a;
     let m = (idx.get(k) || []).find(x => Math.abs(daysBetween(x.d, e.d)) <= 4);
     if (!m) {
-      m = { d: e.d, t: e.t, h, a, hg: e.hg, ag: e.ag, src: 'espn', id: e.id, status: e.status, state: e.state };
+      m = { d: e.d, t: e.t, h, a, hg: e.hg, ag: e.ag, src: 'espn', id: e.id, status: e.status, state: e.state, live: e.live || null };
       L.m.push(m); added++;
       if (!idx.has(k)) idx.set(k, []); idx.get(k).push(m);
     } else {
       if (e.hg != null && (m.hg !== e.hg || m.ag !== e.ag)) updated++;
-      Object.assign(m, { d: e.d, t: e.t, id: e.id, status: e.status, state: e.state });
+      Object.assign(m, { d: e.d, t: e.t, id: e.id, status: e.status, state: e.state, live: e.live || null });
       if (e.hg != null) { m.hg = e.hg; m.ag = e.ag; }
       m.src = m.src === 'of' ? 'of+espn' : m.src;
     }
   }
   return { added, updated };
+}
+
+// Today's games only, uncached: live scores while matches are in progress (ESPN leagues).
+async function refreshToday(codes) {
+  const t = todayISO(), ymd = t.replace(/-/g, '');
+  let live = 0, changed = false;
+  for (const code of codes) {
+    const L = DB.leagues[code];
+    if (!L || !L.m.some(x => x.d === t)) continue;
+    try {
+      const ev = parseEspnEvents(await fetchJSON(`${ESPN_BASE}${LEAGUES[code][1]}/scoreboard?dates=${ymd}`));
+      ESPN_DOWN.ok = true;
+      const before = JSON.stringify(L.m.filter(x => x.d === t).map(x => [x.hg, x.ag, x.live]));
+      mergeEvents(L, ev);
+      const after = JSON.stringify(L.m.filter(x => x.d === t).map(x => [x.hg, x.ag, x.live]));
+      if (before !== after) { finalizeLeague(L); changed = true; }
+      live += ev.filter(e => e.live).length;
+    } catch (e) { ESPN_DOWN.fails++; }
+  }
+  return { live, changed };
 }
 
 // Live refresh of one league. Bundled leagues: current season only. ESPN-only leagues: last 5 seasons.

@@ -59,6 +59,25 @@ function confMeter(p) {
   const n = confLevel(p), label = ['', 'פתוח מאוד', 'פתוח', 'נטייה', 'ביטחון טוב', 'ביטחון גבוה'][n];
   return `<span class="conf" title="רמת ביטחון">${label}<i>${[1, 2, 3, 4, 5].map(i => `<b class="${i <= n ? 'on' : ''}"></b>`).join('')}</i></span>`;
 }
+// Match status for colouring: final result, live score (ESPN, in progress) or not started.
+function matchStatus(m) {
+  if (!m) return { s: 'none' };
+  if (m.hg != null) return { s: 'done', hg: m.hg, ag: m.ag, o: resultCode(m.hg, m.ag) };
+  if (m.live) return { s: 'live', hg: m.live.hg, ag: m.live.ag, o: resultCode(m.live.hg, m.live.ag), clock: m.live.clock };
+  return { s: 'pre' };
+}
+function statusTag(st, picks) {
+  if (st.s !== 'done' && st.s !== 'live') return '';
+  const ok = picks.includes(st.o);
+  const sc = `<span dir="ltr">${st.hg}:${st.ag}</span>`;
+  return st.s === 'done'
+    ? `<span class="tag ${ok ? 'hit' : 'miss'}">${sc} · ${ok ? 'פגיעה' : 'החטאה'}</span>`
+    : `<span class="tag live ${ok ? 'hit' : 'miss'}"><i class="pulse"></i>חי ${esc(st.clock || '')} · ${sc} · ${ok ? 'כרגע פוגע' : 'כרגע מחטיא'}</span>`;
+}
+function rowState(st, picks) {
+  if (st.s !== 'done' && st.s !== 'live') return '';
+  return (picks.includes(st.o) ? ' is-hit' : ' is-miss') + (st.s === 'live' ? ' is-live' : '');
+}
 function oddsLine(P) { return `<span dir="ltr" class="odds">1 ${pct(P['1'])} · X ${pct(P['X'])} · 2 ${pct(P['2'])}</span>`; }
 function probBar(P) {
   const w = o => Math.max(P[o] * 100, 5).toFixed(1);
@@ -296,7 +315,8 @@ function totoCard(t) {
   const rows = ents.map((e, i) => {
     const x = entryProbs(e);
     const H = x.r.manual ? e.manual.home : tName(x.r.code, x.r.h), A = x.r.manual ? e.manual.away : tName(x.r.code, x.r.a);
-    return `<div class="prow"><div><div class="t">${i + 1}. ${esc(H)} – ${esc(A)}</div><div class="m">${x.known ? `${oddsLine(x.p)}` : 'אין נתונים: ניחוש ידני'}</div></div><div class="r">${x.known ? `<span class="pick">${bestPick(x.p)}</span>` : ''}</div></div>`;
+    const st = matchStatus(x.r.m), pk = x.known ? bestPick(x.p) : null;
+    return `<div class="prow${pk ? rowState(st, [pk]) : ''}"><div><div class="t">${i + 1}. ${esc(H)} – ${esc(A)}</div><div class="m">${x.known ? `${oddsLine(x.p)}` : 'אין נתונים: ניחוש ידני'} ${pk ? statusTag(st, [pk]) : ''}</div></div><div class="r">${pk ? `<span class="pick">${pk}</span>` : ''}</div></div>`;
   }).join('');
   return `<div class="panel">
     <div class="section-title"><h2>טופס ווינר 16${t.round ? ' · מחזור ' + esc(t.round) : ''}</h2><button class="btn accent small" id="load-toto">טעינה לטופס שלי</button></div>
@@ -348,13 +368,15 @@ function renderForm() {
   $('#form-sub').textContent = n ? `${n} מתוך 16 משחקים · המערכת מסמנת את הניחוש ומחלקת כפולים ומשולשים` : 'טען את טופס ווינר 16 של השבוע, או הוסף את המשחקים מהטופס הרשמי.';
   if (!n) {
     $('#slip').innerHTML = `<li class="empty">הטופס ריק. ${EXTRA.toto ? 'לחץ "טופס ווינר 16 של השבוע" כדי לטעון אותו,' : ''} לחץ "מילוי מהמשחקים הקרובים" לטופס לדוגמה, או "הוספת משחק".</li>`;
-    $('#sys-summary').innerHTML = ''; return;
+    $('#sys-summary').innerHTML = ''; $('#prize-box').innerHTML = ''; renderSaved(); return;
   }
   const F = computeForm();
   const nd = F.picks.filter(p => p.length === 2).length, nt = F.picks.filter(p => p.length === 3).length;
   const cost = F.cols * (+S.sys.price || 0), exp = F.hits.reduce((a, b) => a + b, 0);
-  const played = F.items.filter(x => x.r.m && x.r.m.hg != null);
-  const correct = played.filter(x => F.picks[F.items.indexOf(x)].includes(outcomeOf(x.r.m))).length;
+  const sts = F.items.map(x => matchStatus(x.r.m));
+  const fin = sts.filter(st => st.s === 'done').length, liveN = sts.filter(st => st.s === 'live').length;
+  const finHit = sts.filter((st, i) => st.s === 'done' && F.picks[i].includes(st.o)).length;
+  const liveHit = sts.filter((st, i) => st.s === 'live' && F.picks[i].includes(st.o)).length;
   $('#sys-summary').innerHTML = `
     <div class="kpi hl"><b>${F.cols.toLocaleString('he-IL')}</b><span>טורים · ${nd} כפולים · ${nt} משולשים</span></div>
     <div class="kpi"><b>₪${cost.toLocaleString('he-IL', { maximumFractionDigits: 1 })}</b><span>עלות משוערת</span></div>
@@ -362,19 +384,22 @@ function renderForm() {
     <div class="kpi"><b>${pctSmall(F.atLeast(n))}</b><span>סיכוי לכל ה־${n}</span></div>
     <div class="kpi"><b>${pctSmall(F.atLeast(n - 1))}</b><span>סיכוי ל־${n - 1} ומעלה</span></div>
     <div class="kpi"><b>${pctSmall(F.atLeast(n - 2))}</b><span>סיכוי ל־${n - 2} ומעלה</span></div>
-    ${played.length ? `<div class="kpi"><b>${correct}/${played.length}</b><span>פגיעות במשחקים שהסתיימו</span></div>` : ''}`;
+    ${fin ? `<div class="kpi ${finHit === fin ? 'good' : ''}"><b>${finHit}/${fin}</b><span>פגיעות במשחקים שהסתיימו</span></div>` : ''}
+    ${liveN ? `<div class="kpi live"><b>${liveHit}/${liveN}</b><span>משחקים חיים שפוגעים כרגע</span></div>` : ''}`;
+  renderPrize(F, sts, cost);
+  autoSaveForm(F, sts);
   $('#slip').innerHTML = F.items.map((x, i) => {
     const e = x.e, r = x.r, pk = F.picks[i];
     const home = r.manual ? e.manual.home : tName(r.code, r.h), away = r.manual ? e.manual.away : tName(r.code, r.a);
-    const res = outcomeOf(r.m);
+    const st = matchStatus(r.m), res = st.o || null;
     const tags = [
       !x.known ? '<span class="tag low">ללא נתונים: סמן ידנית</span>' : '',
       x.known && x.pr.reliability < 6 ? '<span class="tag low">מעט נתונים</span>' : '',
       !r.manual ? staleTag(r.code) : '',
-      res ? `<span class="tag ${pk.includes(res) ? 'hit' : 'miss'}">${r.m.hg}:${r.m.ag} ${pk.includes(res) ? 'פגיעה' : 'החטאה'}</span>` : '',
+      statusTag(st, pk),
     ].join('');
     const boxes = ['1', 'X', '2'].map(o => `<button class="box${pk.includes(o) ? ' on' : ''}${e.pick && e.pick.includes(o) ? ' lock' : ''}${res === o ? ' res' : ''}" data-i="${i}" data-o="${o}" aria-pressed="${pk.includes(o)}" aria-label="${o}"><span class="o">${o}</span><span class="p">${x.known ? pct(x.p[o]) : '–'}</span></button>`).join('');
-    return `<li class="row">
+    return `<li class="row${rowState(st, pk)}">
       <span class="n">${i + 1}</span>
       <div class="teams" data-open="${i}">
         <b>${esc(home)} – ${esc(away)}</b>
@@ -385,6 +410,7 @@ function renderForm() {
         <div class="row-tools"><button class="icon-btn" data-up="${i}" aria-label="העבר למעלה">▲</button><button class="icon-btn" data-del="${i}" aria-label="הסר">✕</button></div></div>
     </li>`;
   }).join('');
+  renderSaved();
 }
 
 function toggleBox(i, o) {
@@ -466,6 +492,189 @@ function openAddDialog() {
   };
 }
 
+
+// ---------- WINNINGS: columns per tier, prize, saved forms ----------
+// Columns with exactly j misses = coefficient of x^j in prod(hit_i + miss_i * x).
+// Games not decided yet count as going your way ("best case") so the box shows what is still possible.
+function columnsByMisses(picksList, sts) {
+  let poly = [1], pending = 0;
+  picksList.forEach((pk, i) => {
+    const st = sts[i], k = pk.length;
+    let h, m;
+    if (st && (st.s === 'done' || st.s === 'live')) { h = pk.includes(st.o) ? 1 : 0; m = k - h; }
+    else { pending++; h = 1; m = k - 1; }
+    const np = new Array(poly.length + 1).fill(0);
+    poly.forEach((v, j) => { np[j] += v * h; np[j + 1] += v * m; });
+    poly = np;
+  });
+  return { poly, pending };
+}
+function tiersOf(n) { return [n, n - 1, n - 2].filter(t => t > 0); }
+function winningsOf(n, poly, prizes) {
+  const rows = tiersOf(n).map(t => { const c = poly[n - t] || 0, pr = +((prizes || {})[t]) || 0; return { t, c, pr, sum: c * pr }; });
+  const best = n - poly.findIndex(v => v > 0);
+  return { rows, total: rows.reduce((a, r) => a + r.sum, 0), best };
+}
+const money = v => '₪' + (+v || 0).toLocaleString('he-IL', { maximumFractionDigits: 0 });
+
+function prizeTable(n, poly, prizes, cost, inputPrefix, final) {
+  const W = winningsOf(n, poly, prizes), profit = W.total - cost;
+  return `<div class="tbl-wrap"><table><thead><tr><th>נכונים</th><th class="c">טורים זוכים</th><th class="c">פרס לטור (₪)</th><th class="c">סה״כ</th></tr></thead><tbody>
+    ${W.rows.map(r => `<tr class="${r.c ? 'tier-on' : ''}"><td><b>${r.t}</b> מתוך ${n}</td><td class="c num">${r.c.toLocaleString('he-IL')}</td>
+      <td class="c"><input class="prize-in" type="number" min="0" step="1" inputmode="decimal" id="${inputPrefix}-${r.t}" data-tier="${r.t}" value="${(prizes || {})[r.t] ?? ''}" placeholder="0" aria-label="פרס לטור עם ${r.t} נכונים"></td>
+      <td class="c num">${money(r.sum)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="kpis">
+      <div class="kpi"><b>${W.best}/${n}</b><span>הטור הטוב ביותר</span></div>
+      <div class="kpi ${W.total > 0 ? 'good' : ''}"><b>${money(W.total)}</b><span>זכייה</span></div>
+      <div class="kpi"><b>${money(cost)}</b><span>עלות הטופס</span></div>
+      <div class="kpi ${profit > 0 ? 'good' : profit < 0 && W.total > 0 ? 'bad' : ''}"><b>${profit >= 0 ? '' : '−'}${money(Math.abs(profit))}</b><span>${profit >= 0 ? 'רווח' : 'הפסד'}${final ? '' : ' עד כה'}</span></div>
+    </div>`;
+}
+
+function renderPrize(F, sts, cost) {
+  const box = $('#prize-box'); if (!box) return;
+  const n = F.items.length;
+  const started = sts.some(st => st.s === 'done' || st.s === 'live');
+  if (!started) {
+    box.innerHTML = `<div class="panel"><h3>זכייה בטופס</h3><p class="note">אחרי שהמשחקים יתחילו, כאן יופיעו התוצאות: כמה טורים פגעו ב־${tiersOf(n).join(', ')} נכונים, הזכייה והרווח. הטופס נשמר אוטומטית ב"הטפסים שלי" ברגע שהמשחק הראשון מתחיל.</p></div>`;
+    return;
+  }
+  const { poly, pending } = columnsByMisses(F.picks, sts);
+  const liveN = sts.filter(st => st.s === 'live').length;
+  const state = pending ? `נותרו ${pending} משחקים שלא התחילו. הטבלה מניחה שהם יסתדרו לטובתך, כלומר זה המקסימום שעוד אפשרי.` : liveN ? `${liveN} משחקים עדיין חיים: המספרים לפי התוצאה כרגע.` : 'כל המשחקים הסתיימו. אלה התוצאות הסופיות של הטופס.';
+  box.innerHTML = `<div class="panel">
+    <div class="section-title"><h3>זכייה בטופס</h3>${!pending && !liveN ? '<span class="tag hit">סופי</span>' : '<span class="tag live"><i class="pulse"></i>מתעדכן</span>'}</div>
+    <p class="note">${state} את הפרס לטור מזינים לפי מה שהטוטו מפרסם אחרי המחזור: הוא נקבע לפי הקופה ומספר הזוכים, ולכן אי אפשר לדעת אותו מראש.</p>
+    ${prizeTable(n, poly, S.prizes, cost, 'pz', !pending && !liveN)}</div>`;
+}
+
+function formSig(entries) { return entries.map(e => (e.manual ? 'm:' + e.manual.home + '-' + e.manual.away : e.code + ':' + e.hk + '-' + e.ak) + '@' + e.d).join('|'); }
+function saveCurrentForm(auto) {
+  if (!S.form.length) { toast('הטופס ריק'); return; }
+  const F = computeForm();
+  S.saved = S.saved || [];
+  const sig = formSig(S.form);
+  const ds = S.form.map(e => e.d).sort();
+  const rec = {
+    id: 'f' + Date.now(), sig, saved: todayISO(), auto: !!auto,
+    label: (EXTRA.toto && formSig(totoEntries(EXTRA.toto).slice(0, 16)) === sig ? 'ווינר 16 · מחזור ' + EXTRA.toto.round + ' · ' : '') + `${dmy(ds[0])}–${dmy(ds[ds.length - 1])}`,
+    cols: F.cols, price: +S.sys.price || 0, cost: F.cols * (+S.sys.price || 0), prizes: { ...(S.prizes || {}) },
+    games: F.items.map((x, i) => {
+      const r = x.r;
+      return { e: { ...x.e, pick: undefined }, home: r.manual ? x.e.manual.home : tName(r.code, r.h), away: r.manual ? x.e.manual.away : tName(r.code, r.a), picks: F.picks[i], p: x.p };
+    }),
+  };
+  const i = S.saved.findIndex(x => x.sig === sig);
+  if (i >= 0) { if (auto) return; rec.id = S.saved[i].id; rec.prizes = { ...S.saved[i].prizes, ...rec.prizes }; S.saved[i] = rec; }
+  else S.saved.unshift(rec);
+  save(); renderSaved();
+  toast(auto ? 'המשחק הראשון התחיל: הטופס נשמר אוטומטית ב"הטפסים שלי"' : 'הטופס נשמר ב"הטפסים שלי"');
+}
+function autoSaveForm(F, sts) {
+  if (!S.form.length || !sts.some(st => st.s === 'done' || st.s === 'live')) return;
+  const sig = formSig(S.form);
+  if (!(S.saved || []).some(x => x.sig === sig)) saveCurrentForm(true);
+}
+function evalSaved(rec) {
+  const sts = rec.games.map(g => { const r = resolveEntry(g.e); return r.manual ? { s: 'none' } : matchStatus(r.m); });
+  const { poly, pending } = columnsByMisses(rec.games.map(g => g.picks), sts);
+  const n = rec.games.length, W = winningsOf(n, poly, rec.prizes);
+  const fin = sts.filter(st => st.s === 'done').length, live = sts.filter(st => st.s === 'live').length;
+  const hits = sts.filter((st, i) => st.s === 'done' && rec.games[i].picks.includes(st.o)).length;
+  return { sts, poly, pending, n, W, fin, live, hits, done: fin === n, profit: W.total - rec.cost };
+}
+
+function savedChart(list) {
+  const pts = list.filter(x => x.v.done).slice(0, 12).reverse();
+  if (!pts.length) return '<p class="note">הגרף יופיע אחרי שטופס שמור יסתיים.</p>';
+  const W = 640, Hh = 210, pad = { l: 34, r: 8, t: 14, b: 30 }, iw = W - pad.l - pad.r, ih = Hh - pad.t - pad.b;
+  const n = Math.max(...pts.map(x => x.v.n)), bw = iw / pts.length, y = v => pad.t + ih * (1 - v / n);
+  return `<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="הטור הטוב ביותר בכל טופס">
+    ${[0, n / 4, n / 2, (3 * n) / 4, n].map(v => `<line class="grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end">${Math.round(v)}</text>`).join('')}
+    <line class="ref" x1="${pad.l}" x2="${W - pad.r}" y1="${y(n - 2)}" y2="${y(n - 2)}"/>
+    ${pts.map((x, i) => `<rect class="barv${x.v.W.total > 0 ? '' : ' lowv'}" x="${pad.l + i * bw + bw * 0.2}" y="${y(x.v.W.best)}" width="${bw * 0.6}" height="${ih * x.v.W.best / n}" rx="3"><title>${esc(x.rec.label)}: ${x.v.W.best}/${x.v.n}, זכייה ${money(x.v.W.total)}</title></rect>
+      <text x="${pad.l + i * bw + bw / 2}" y="${y(x.v.W.best) - 4}" text-anchor="middle">${x.v.W.best}</text>
+      <text x="${pad.l + i * bw + bw / 2}" y="${Hh - 10}" text-anchor="middle">${dmy(x.rec.games.map(g => g.e.d).sort()[0])}</text>`).join('')}
+  </svg>
+  <div class="legend"><span><i style="background:var(--o1)"></i>טופס עם זכייה</span><span><i style="background:var(--ox)"></i>בלי זכייה</span><span><i style="background:var(--accent)"></i>קו ${n - 2} נכונים (הדרגה הנמוכה)</span></div>`;
+}
+
+function renderSaved() {
+  const box = $('#saved-box'); if (!box) return;
+  const list = (S.saved || []).map(rec => ({ rec, v: evalSaved(rec) }));
+  const done = list.filter(x => x.v.done);
+  const tc = done.reduce((a, x) => a + x.rec.cost, 0), tw = done.reduce((a, x) => a + x.v.W.total, 0);
+  box.innerHTML = `<div class="panel">
+    <div class="section-title"><h2>הטפסים שלי</h2><span class="actions"><button class="btn small" id="btn-save">שמירת הטופס</button><button class="btn small ghost" id="btn-export">גיבוי</button><button class="btn small ghost" id="btn-import">שחזור</button></span></div>
+    <p class="note">כל טופס נשמר עם הניחושים שלו ונבדק מול התוצאות: ירוק = פגיעה, אדום = החטאה. הנתונים נשמרים בדפדפן הזה; "גיבוי" מעתיק אותם כדי להעביר למכשיר אחר.</p>
+    ${list.length ? `<div class="kpis">
+      <div class="kpi"><b>${list.length}</b><span>טפסים שמורים</span></div>
+      <div class="kpi"><b>${done.length ? pct(done.reduce((a, x) => a + x.v.hits, 0) / done.reduce((a, x) => a + x.v.n, 0)) : '–'}</b><span>פגיעה במשחקים (טפסים שהסתיימו)</span></div>
+      <div class="kpi"><b>${money(tw)}</b><span>סך זכיות</span></div>
+      <div class="kpi ${tw - tc > 0 ? 'good' : tw - tc < 0 ? 'bad' : ''}"><b>${tw - tc >= 0 ? '' : '−'}${money(Math.abs(tw - tc))}</b><span>${tw - tc >= 0 ? 'רווח' : 'הפסד'} מצטבר</span></div>
+    </div>
+    ${savedChart(list)}
+    <div class="plist">${list.map(({ rec, v }) => {
+      const cls = v.done ? (v.W.total > 0 ? ' is-hit' : ' is-miss') : v.live ? ' is-live' : '';
+      const st = v.done ? 'הסתיים' : v.live ? `${v.live} משחקים חיים` : v.fin ? `${v.fin}/${v.n} הסתיימו` : 'לפני המשחקים';
+      return `<div class="prow click${cls}" data-saved="${rec.id}"><div><div class="t">${esc(rec.label)}${rec.auto ? ' <span class="tag">נשמר אוטומטית</span>' : ''}</div>
+        <div class="m">${st} · ${rec.cols.toLocaleString('he-IL')} טורים · ${money(rec.cost)} · פגיעות ${v.hits}/${v.fin || 0}</div></div>
+        <div class="r"><span class="pct">${v.W.best}/${v.n}</span>${v.done ? `<span class="tag ${v.W.total > 0 ? 'hit' : 'miss'}">${v.W.total > 0 ? money(v.W.total) : 'ללא זכייה'}</span>` : ''}</div></div>`;
+    }).join('')}</div>` : '<p class="note">עדיין אין טפסים שמורים. לחץ "שמירת הטופס", או פשוט חכה: הטופס יישמר לבד כשהמשחק הראשון מתחיל.</p>'}
+  </div>`;
+}
+
+function openSaved(id) {
+  const rec = (S.saved || []).find(x => x.id === id); if (!rec) return;
+  const v = evalSaved(rec);
+  openSheet(`<div class="panel">
+    <h2>${esc(rec.label)}</h2>
+    <p class="note">נשמר ב־${dmy(rec.saved)}${rec.auto ? ' (אוטומטית, בתחילת המשחקים)' : ''} · ${rec.cols.toLocaleString('he-IL')} טורים · ₪${rec.price} לטור</p>
+    <div class="plist">${rec.games.map((g, i) => {
+      const st = v.sts[i];
+      return `<div class="prow${rowState(st, g.picks)}"><div><div class="t">${i + 1}. ${esc(g.home)} – ${esc(g.away)}</div><div class="m">${g.p ? oddsLine(g.p) : ''} ${statusTag(st, g.picks)}</div></div><div class="r"><span class="pick">${g.picks.join('')}</span>${st.s === 'done' ? `<span class="hitmark ${g.picks.includes(st.o) ? 'ok' : 'no'}">${g.picks.includes(st.o) ? '✓' : '✕'}</span>` : ''}</div></div>`;
+    }).join('')}</div>
+    <h3>זכייה</h3>
+    <p class="note">${v.done ? 'כל המשחקים הסתיימו.' : v.pending ? `נותרו ${v.pending} משחקים: המספרים מניחים שהם יסתדרו לטובתך.` : 'יש משחקים חיים: המספרים לפי התוצאה כרגע.'} הזן את הפרס לטור לפי הפרסום הרשמי.</p>
+    <div id="saved-prize">${prizeTable(v.n, v.poly, rec.prizes, rec.cost, 'sp', v.done)}</div>
+    <div class="actions"><button class="btn" id="saved-load">טעינה לטופס</button><button class="btn ghost" id="saved-del">מחיקה</button></div>
+  </div>`);
+  $('#saved-prize').addEventListener('change', e => {
+    const t = e.target.closest('[data-tier]'); if (!t) return;
+    rec.prizes = rec.prizes || {};
+    if (rec.prizes[t.dataset.tier] === t.value) return;
+    rec.prizes[t.dataset.tier] = t.value; save(); setTimeout(() => { renderSaved(); openSaved(id); }, 0);
+  });
+  $('#saved-load').onclick = () => {
+    S.form = rec.games.map(g => ({ ...g.e, pick: g.picks.slice() })); S.prizes = { ...rec.prizes }; save(); closeSheet(); go('form');
+    toast('הטופס נטען, עם הניחושים כפי שנשמרו');
+  };
+  $('#saved-del').onclick = () => {
+    const b = $('#saved-del');
+    if (!b.dataset.confirm) { b.dataset.confirm = 1; b.textContent = 'לחץ שוב למחיקה'; return; }
+    S.saved = S.saved.filter(x => x.id !== id); save(); closeSheet(); renderSaved(); toast('הטופס נמחק');
+  };
+}
+function exportSaved() {
+  const txt = JSON.stringify(S.saved || []);
+  openSheet(`<div class="panel"><h2>גיבוי הטפסים</h2><p class="note">העתק את הטקסט ושמור אותו (למשל בהודעה לעצמך). במכשיר אחר: "שחזור" והדבקה.</p><textarea class="copybox" id="exp-txt" readonly>${esc(txt)}</textarea></div>`);
+  const ta = $('#exp-txt'); ta.focus(); ta.select();
+  try { navigator.clipboard.writeText(txt).then(() => toast('הגיבוי הועתק'), () => {}); } catch (e) { /* manual copy */ }
+}
+function importSaved() {
+  openSheet(`<div class="panel"><h2>שחזור טפסים</h2><p class="note">הדבק כאן טקסט גיבוי. טפסים שכבר קיימים לא יוכפלו.</p><textarea class="copybox" id="imp-txt"></textarea><div class="actions"><button class="btn primary" id="imp-ok">שחזור</button></div></div>`);
+  $('#imp-ok').onclick = () => {
+    try {
+      const arr = JSON.parse($('#imp-txt').value);
+      if (!Array.isArray(arr)) throw new Error('bad');
+      S.saved = S.saved || []; let added = 0;
+      for (const r of arr) if (r && r.sig && r.games && !S.saved.some(x => x.sig === r.sig)) { S.saved.push(r); added++; }
+      save(); closeSheet(); renderSaved(); toast(`שוחזרו ${added} טפסים`);
+    } catch (e) { toast('הטקסט לא נראה כמו גיבוי של טוטו חכם'); }
+  };
+}
+
 // ---------- WEEK ----------
 function weekRange() {
   const t = todayISO(), dow = new Date(t + 'T12:00:00Z').getUTCDay();
@@ -493,12 +702,12 @@ function card(code, m, inForm) {
   const p = known ? predictCached(code, m.h, m.a, asOf) : null, P = p ? probsOf(p) : null;
   const H = L.teams[m.h], A = L.teams[m.a];
   const k = `${code}|${H.key}|${A.key}`;
-  const res = outcomeOf(m), pk = P ? bestPick(P) : null;
-  return `<article class="mcard">
+  const st = matchStatus(m), res = st.o || null, pk = P ? bestPick(P) : null;
+  return `<article class="mcard${pk ? rowState(st, [pk]) : ''}">
     <div class="lg"><span>${esc(leagueName(code))} ${staleTag(code)}</span><span>${m.hg == null ? (m.t || '') : (pk ? `<span class="hitmark ${pk === res ? 'ok' : 'no'}">${pk === res ? '✓' : '✕'}</span>` : '')}</span></div>
     <div class="vs" data-match="${code}|${L.m.indexOf(m)}">
       <div class="team">${badge(H.he, H.key)}<b>${esc(H.he)}</b></div>
-      <span class="mid${m.hg != null ? ' score' : ''}">${m.hg != null ? `${m.hg}:${m.ag}` : 'נגד'}</span>
+      <span class="mid${st.s === 'done' || st.s === 'live' ? ' score' : ''}">${st.s === 'done' || st.s === 'live' ? `<span dir="ltr">${st.hg}:${st.ag}</span>${st.s === 'live' ? `<small class="live-clock"><i class="pulse"></i>${esc(st.clock || 'חי')}</small>` : ''}` : 'נגד'}</span>
       <div class="team">${badge(A.he, A.key)}<b>${esc(A.he)}</b></div>
     </div>
     ${P ? probBar(P) + reasonLine(p, H.he, A.he) : '<div class="note">אין מספיק נתונים לתחזית</div>'}
@@ -617,7 +826,7 @@ function analysis(H, A, P, p, sh, sa, hh, ph, pa, L) {
 function weeklyChart(rows) {
   const by = {};
   rows.forEach(r => { const w = mondayOf(r.d); (by[w] = by[w] || []).push(r); });
-  const weeks = Object.keys(by).sort().slice(-16).map(w => ({ w, ...accOf(by[w]) })).filter(x => x.n >= 5);
+  const weeks = Object.keys(by).sort().slice(-16).map(w => ({ w, ...accOf(by[w]), exp: by[w].reduce((a, r) => a + r.conf, 0) / by[w].length })).filter(x => x.n >= 5);
   if (!weeks.length) return '<p class="note">אין מספיק שבועות.</p>';
   const W = 640, Hh = 200, pad = { l: 34, r: 8, t: 12, b: 26 }, iw = W - pad.l - pad.r, ih = Hh - pad.t - pad.b;
   const bw = iw / weeks.length, y = v => pad.t + ih * (1 - v);
@@ -626,10 +835,11 @@ function weeklyChart(rows) {
     ${[0, 0.25, 0.5, 0.75, 1].map(v => `<line class="grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end">${v * 100}%</text>`).join('')}
     ${weeks.map((x, i) => `<rect class="barv${x.acc < 1 / 3 ? ' lowv' : ''}" x="${pad.l + i * bw + bw * 0.18}" y="${y(x.acc)}" width="${bw * 0.64}" height="${ih * x.acc}" rx="3"><title>${dmy(x.w)}: ${pct(x.acc)} (${x.n} משחקים)</title></rect>
       ${i % 2 === 0 || weeks.length <= 8 ? `<text x="${pad.l + i * bw + bw / 2}" y="${Hh - 8}" text-anchor="middle">${dmy(x.w)}</text>` : ''}`).join('')}
-    <line class="ref" x1="${pad.l}" x2="${W - pad.r}" y1="${y(1 / 3)}" y2="${y(1 / 3)}"/>
-    <line class="line" x1="${pad.l}" x2="${W - pad.r}" y1="${y(avg)}" y2="${y(avg)}" stroke-dasharray="1 0"/>
+    <line class="diag" x1="${pad.l}" x2="${W - pad.r}" y1="${y(1 / 3)}" y2="${y(1 / 3)}"/>
+    <polyline class="line" points="${weeks.map((x, i) => `${pad.l + i * bw + bw / 2},${y(x.exp)}`).join(' ')}"/>
+    ${weeks.map((x, i) => `<circle class="dot" cx="${pad.l + i * bw + bw / 2}" cy="${y(x.exp)}" r="3.5"><title>${dmy(x.w)}: המערכת צפתה ${pct(x.exp)}, בפועל ${pct(x.acc)}</title></circle>`).join('')}
   </svg>
-  <div class="legend"><span><i style="background:var(--o1)"></i>פגיעה בשבוע</span><span><i style="background:var(--accent)"></i>ממוצע ${pct(avg)} (קו מלא) · ניחוש אקראי 33% (מקווקו)</span></div>`;
+  <div class="legend"><span><i style="background:var(--o1)"></i>פגיעה בפועל (ממוצע ${pct(avg)})</span><span><i style="background:var(--accent)"></i>מה שהמערכת צפתה לאותו שבוע</span><span>מקווקו: ניחוש אקראי 33%</span></div>`;
 }
 function calibChart(buckets) {
   const W = 320, Hh = 240, pad = { l: 36, r: 10, t: 10, b: 30 }, iw = W - pad.l - pad.r, ih = Hh - pad.t - pad.b;
@@ -690,7 +900,7 @@ async function renderTrack() {
       <div class="kpi"><b>33% / 67%</b><span>ניחוש אקראי: בודד / כפול</span></div>
     </div>
     <div class="grid2">
-      <div class="panel"><h3>פגיעה לפי שבוע</h3>${weeklyChart(T.filter(r => r.d >= addDays(todayISO(), -140)))}</div>
+      <div class="panel"><h3>תחזית מול תוצאה, לפי שבוע</h3><p class="note">עמודה = כמה ניחושים פגעו בפועל. נקודה = כמה המערכת ציפתה שיפגעו. כשהן קרובות, המערכת מעריכה את עצמה נכון.</p>${weeklyChart(T.filter(r => r.d >= addDays(todayISO(), -140)))}</div>
       <div class="panel"><h3>האם אפשר לסמוך על האחוזים?</h3>${M ? calibChart(M.buckets) : ''}
         <p class="note">${M ? M.buckets.filter(b => b.n >= 30).map(b => `כשהמערכת אמרה ${pct(b.pred)}, היא צדקה ב־${pct(b.hit)}`).join(' · ') : ''}.</p></div>
     </div>
@@ -809,6 +1019,10 @@ function bind() {
     if (g) { e.preventDefault(); closeSheet(); go(g.dataset.go); return; }
     if (e.target.closest('#load-toto')) { loadToto(); return; }
     const fr = e.target.closest('[data-frozen]'); if (fr) { openFrozen(fr.dataset.frozen); return; }
+    if (e.target.closest('#btn-save')) { saveCurrentForm(false); return; }
+    if (e.target.closest('#btn-export')) { exportSaved(); return; }
+    if (e.target.closest('#btn-import')) { importSaved(); return; }
+    const sv = e.target.closest('[data-saved]'); if (sv) { openSaved(sv.dataset.saved); return; }
     const add = e.target.closest('[data-addm]');
     if (add) { const [c, i] = add.dataset.addm.split('|'); addEntry(entryFrom(c, DB.leagues[c].m[+i])); if (S.tab === 'week') renderWeek(); return; }
     const mt = e.target.closest('[data-match]');
@@ -827,6 +1041,14 @@ function bind() {
     if (b.dataset.confirm) { S.form = []; save(); renderForm(); b.textContent = 'ניקוי'; delete b.dataset.confirm; toast('הטופס נוקה'); }
     else { b.dataset.confirm = 1; b.textContent = 'לחץ שוב לאישור'; setTimeout(() => { b.textContent = 'ניקוי'; delete b.dataset.confirm; }, 3000); }
   };
+  $('#prize-box').addEventListener('change', e => {
+    const t = e.target.closest('[data-tier]'); if (!t) return;
+    S.prizes = S.prizes || {};
+    if (S.prizes[t.dataset.tier] === t.value) return;
+    S.prizes[t.dataset.tier] = t.value;
+    const rec = (S.saved || []).find(x => x.sig === formSig(S.form)); if (rec) rec.prizes = { ...rec.prizes, [t.dataset.tier]: t.value };
+    save(); setTimeout(renderForm, 0); // redraw after the input has finished losing focus
+  });
   $('#sys-mode').onchange = e => { S.sys.mode = e.target.value; save(); renderForm(); };
   $('#sys-cols').onchange = e => { S.sys.cols = +e.target.value; save(); renderForm(); };
   $('#sys-d').oninput = e => { S.sys.d = Math.max(0, Math.min(16, +e.target.value || 0)); save(); renderForm(); };
@@ -889,5 +1111,16 @@ async function loadExtras() {
   setStatus();
   const h = location.hash.slice(1);
   go(VIEWS.includes(h) ? h : (S.tab || 'home'), false);
-  refreshAll(false);
+  refreshAll(false).then(pollLive);
+  setInterval(pollLive, 60000);
 })();
+
+// Live scores: every minute while the page is open, for today's games (ESPN leagues).
+async function pollLive() {
+  if (document.hidden) return;
+  const t = todayISO();
+  const codes = PRIORITY.filter(c => !c.startsWith('isr') && DB.leagues[c] && DB.leagues[c].m.some(x => x.d === t && x.hg == null));
+  if (!codes.length) return;
+  const r = await refreshToday(codes);
+  if (r.changed) { PCACHE.clear(); setStatus(); if (!$('#sheet').hidden) return; render(); }
+}
