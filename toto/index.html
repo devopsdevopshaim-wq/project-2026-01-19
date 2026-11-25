@@ -5,117 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>טוטו חכם</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="מערכת ניחושים לטוטו כדורגל: משחקי השבוע, ראש בראש, סטטיסטיקות ובניית טופס 16 משחקים">
-<meta name="theme-color" content="#0b3d2c">
+<meta name="description" content="ניחושים מנומקים לטוטו ולווינר: סיכויים, ראש בראש, טבלאות, מעקב דיוק ולמידה שבועית">
+<meta name="theme-color" content="#0a3b2a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Secular+One&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700;800&family=Heebo:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div id="app" dir="rtl">
   <header class="top">
     <div class="top-in">
-      <div class="brand">
+      <a class="brand" href="#home" data-go="home" aria-label="טוטו חכם – דף הבית">
         <span class="brand-mark" aria-hidden="true"><i>1</i><i>X</i><i>2</i></span>
         <span class="brand-name">טוטו חכם</span>
-      </div>
-      <nav class="tabs" role="tablist">
-        <button role="tab" id="tab-form" data-tab="form">הטופס שלי</button>
-        <button role="tab" id="tab-week" data-tab="week">משחקי השבוע</button>
-        <button role="tab" id="tab-tables" data-tab="tables">טבלאות</button>
-        <button role="tab" id="tab-info" data-tab="info">מידע</button>
+      </a>
+      <nav class="tabs" aria-label="ניווט ראשי">
+        <button data-go="home">ראשי</button>
+        <button data-go="form">הטופס</button>
+        <button data-go="week">משחקים</button>
+        <button data-go="track">דיוק ולמידה</button>
+        <button data-go="tables">טבלאות</button>
+        <button data-go="info">שיטה</button>
       </nav>
+      <span class="fresh" id="status" role="status">טוען…</span>
     </div>
   </header>
 
   <main class="wrap">
-    <div id="status" class="status" role="status">טוען נתונים…</div>
-
-    <!-- FORM -->
+    <section id="view-home" class="view" hidden></section>
     <section id="view-form" class="view" hidden>
-      <div class="slip-head">
+      <div class="page-head">
         <div>
-          <h1>טופס 16 משחקים</h1>
-          <p class="sub" id="form-sub">הוסף את המשחקים מהטופס הרשמי, והמערכת תסמן ניחוש לכל משחק.</p>
+          <p class="eyebrow">ווינר 16</p>
+          <h1>הטופס שלי</h1>
+          <p class="sub" id="form-sub"></p>
         </div>
-        <div class="slip-actions">
-          <button class="btn primary" id="btn-autofill">מילוי מהמשחקים הקרובים</button>
+        <div class="actions">
+          <button class="btn primary" id="btn-official" hidden>טופס ווינר 16 של השבוע</button>
+          <button class="btn" id="btn-autofill">מילוי מהמשחקים הקרובים</button>
           <button class="btn" id="btn-add-manual">הוספת משחק</button>
-          <button class="btn" id="btn-copy">העתקת הטופס</button>
+          <button class="btn" id="btn-copy">העתקה</button>
           <button class="btn ghost" id="btn-clear">ניקוי</button>
         </div>
       </div>
-
-      <div class="system">
+      <div class="system card-surface">
         <div class="sys-controls">
-          <label class="field">
-            <span>שיטת מילוי</span>
-            <select id="sys-mode">
-              <option value="cols">לפי מספר טורים</option>
-              <option value="dt">לפי כפולים ומשולשים</option>
-            </select>
-          </label>
-          <label class="field" id="f-cols">
-            <span>מקסימום טורים</span>
-            <select id="sys-cols"></select>
-          </label>
-          <label class="field" id="f-d" hidden>
-            <span>כפולים</span>
-            <input id="sys-d" type="number" min="0" max="16" value="3" inputmode="numeric">
-          </label>
-          <label class="field" id="f-t" hidden>
-            <span>משולשים</span>
-            <input id="sys-t" type="number" min="0" max="16" value="1" inputmode="numeric">
-          </label>
-          <label class="field">
-            <span>מחיר טור (₪)</span>
-            <input id="sys-price" type="number" min="0" step="0.5" value="3" inputmode="decimal">
-          </label>
+          <label class="field"><span>שיטת מילוי</span>
+            <select id="sys-mode"><option value="cols">לפי מספר טורים</option><option value="dt">לפי כפולים ומשולשים</option></select></label>
+          <label class="field" id="f-cols"><span>מקסימום טורים</span><select id="sys-cols"></select></label>
+          <label class="field" id="f-d" hidden><span>כפולים</span><input id="sys-d" type="number" min="0" max="16" value="3" inputmode="numeric"></label>
+          <label class="field" id="f-t" hidden><span>משולשים</span><input id="sys-t" type="number" min="0" max="16" value="1" inputmode="numeric"></label>
+          <label class="field"><span>מחיר טור (₪)</span><input id="sys-price" type="number" min="0" step="0.5" value="3" inputmode="decimal"></label>
         </div>
-        <div class="sys-summary" id="sys-summary"></div>
+        <div class="kpis" id="sys-summary"></div>
       </div>
-
       <ol class="slip" id="slip"></ol>
-      <p class="hint">לחיצה על 1 / X / 2 קובעת ניחוש ידני למשחק (המערכת תתאים את שאר הטופס). לחיצה על שם המשחק פותחת סקירה מלאה.</p>
+      <p class="hint">לחיצה על 1 / X / 2 קובעת ניחוש ידני (שאר הטופס מתאים את עצמו). לחיצה על שם המשחק פותחת ניתוח מלא.</p>
     </section>
-
-    <!-- WEEK -->
     <section id="view-week" class="view" hidden>
-      <div class="week-head">
-        <h1>משחקי השבוע</h1>
-        <div class="range">
-          <button class="chip" data-range="week">7 ימים קרובים</button>
-          <button class="chip" data-range="weekend">סוף השבוע</button>
-          <button class="chip" data-range="next">השבוע הבא</button>
-          <label class="field inline"><span>מ־</span><input type="date" id="w-from"></label>
-          <label class="field inline"><span>עד</span><input type="date" id="w-to"></label>
-        </div>
-        <div class="league-chips" id="league-chips"></div>
+      <div class="page-head">
+        <div><p class="eyebrow">לוח משחקים</p><h1>משחקים וניחושים</h1></div>
       </div>
+      <div class="filters">
+        <div class="seg" role="group" aria-label="טווח תאריכים">
+          <button data-range="week">7 ימים</button>
+          <button data-range="weekend">סוף השבוע</button>
+          <button data-range="next">השבוע הבא</button>
+        </div>
+        <label class="field inline"><span>מ־</span><input type="date" id="w-from"></label>
+        <label class="field inline"><span>עד</span><input type="date" id="w-to"></label>
+      </div>
+      <div class="league-chips" id="league-chips"></div>
       <div id="week-list"></div>
     </section>
-
-    <!-- TABLES -->
+    <section id="view-track" class="view" hidden></section>
     <section id="view-tables" class="view" hidden>
-      <div class="week-head">
-        <h1>טבלאות ליגה</h1>
+      <div class="page-head">
+        <div><p class="eyebrow">עונה נוכחית</p><h1>טבלאות</h1></div>
         <label class="field"><span>ליגה</span><select id="t-league"></select></label>
       </div>
       <div id="table-box"></div>
     </section>
-
-    <!-- INFO -->
-    <section id="view-info" class="view" hidden>
-      <div id="info-box"></div>
-    </section>
+    <section id="view-info" class="view" hidden></section>
   </main>
+
+  <nav class="bottom-nav" aria-label="ניווט">
+    <button data-go="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>ראשי</span></button>
+    <button data-go="form"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 7h8v2H8zm0 4h8v2H8zm0-8h5v2H8z"/></svg><span>הטופס</span></button>
+    <button data-go="week"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z"/></svg><span>משחקים</span></button>
+    <button data-go="track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4zM6 10h3v7H6zm5-4h3v11h-3zm5 7h3v4h-3z"/></svg><span>דיוק</span></button>
+    <button data-go="tables"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v3H3zm0 5h18v3H3zm0 5h18v3H3z"/></svg><span>טבלאות</span></button>
+  </nav>
 
   <div class="sheet-back" id="sheet-back" hidden></div>
   <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden>
-    <div class="sheet-bar"><button class="btn ghost" id="sheet-close" aria-label="סגירה">סגירה ✕</button></div>
+    <div class="sheet-bar"><span class="grab" aria-hidden="true"></span><button class="btn ghost small" id="sheet-close">סגירה ✕</button></div>
     <div class="sheet-body" id="sheet-body"></div>
   </div>
   <div class="toast" id="toast" hidden></div>

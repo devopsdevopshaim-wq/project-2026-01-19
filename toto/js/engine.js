@@ -62,6 +62,11 @@ async function loadBundled() {
   if (!r.ok) throw new Error('history.json ' + r.status);
   const d = await r.json();
   DB.built = d.built;
+  // Learned weights + per-league calibration (written weekly by tools/train.js).
+  try {
+    const mr = await fetch('data/model.json', { cache: 'no-cache' });
+    if (mr.ok) { const mj = await mr.json(); DB.model = mj; if (mj.live) FW = mj.live; }
+  } catch (e) { /* keep built-in weights */ }
   for (const code of Object.keys(LEAGUES)) DB.leagues[code] = emptyLeague(code);
   for (const [code, src] of Object.entries(d.leagues)) {
     const L = DB.leagues[code];
@@ -323,6 +328,9 @@ function predict(code, h, a, asOf) {
   const ol = orderedLogit(fx.d);
   const m = FW.mix; // share of the Poisson model in the final probability
   let p1 = m * S.p1 + (1 - m) * ol.p1, px = m * S.px + (1 - m) * ol.px, p2 = m * S.p2 + (1 - m) * ol.p2;
+  // Per-league calibration learned from recent results (e.g. a league where draws were under-predicted).
+  const cal = FW.calib && FW.calib[code];
+  if (cal) { p1 *= cal[0]; px *= cal[1]; p2 *= cal[2]; }
   const z = p1 + px + p2; p1 /= z; px /= z; p2 /= z;
   // Contribution of each factor to the latent score (positive = home side).
   const contrib = {};
