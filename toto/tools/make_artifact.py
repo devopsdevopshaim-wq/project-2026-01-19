@@ -13,7 +13,7 @@ for pat in [r'<meta charset="utf-8">\s*', r'<meta name="viewport"[^>]*>\s*', r'<
 s = s.replace('</head>\n<body>\n', '').replace('</body>\n</html>\n', '')
 open(os.path.join(out, 'index.html'), 'w', encoding='utf-8').write(s)
 files = {}
-for rel in ['css/style.css', 'js/names.js', 'js/engine.js', 'js/app.js', 'js/live.js', 'data/history.json', 'data/model.json', 'data/predictions.json', 'data/toto_week.json']:
+for rel in ['css/style.css', 'js/names.js', 'js/engine.js', 'js/basket.js', 'js/pages.js', 'js/app.js', 'js/live.js', 'data/history.json', 'data/basketball.json', 'data/model.json', 'data/predictions.json', 'data/toto_week.json']:
     src = os.path.join(root, rel)
     if os.path.exists(src):
         os.makedirs(os.path.dirname(os.path.join(out, rel)), exist_ok=True)

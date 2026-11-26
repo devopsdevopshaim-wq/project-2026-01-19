@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700;800&family=Heebo:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202611251745">
+<link rel="stylesheet" href="css/style.css?v=202611261200">
 </head>
 <body>
 <div id="app" dir="rtl">
@@ -24,12 +24,15 @@
       </a>
       <nav class="tabs" aria-label="ניווט ראשי">
         <button data-go="home">ראשי</button>
-        <button data-go="form">הטופס</button>
+        <button data-go="form">ווינר 16</button>
+        <button data-go="basket">ווינר סל</button>
+        <button data-go="line">ווינר ליין</button>
         <button data-go="week">משחקים</button>
-        <button data-go="track">דיוק ולמידה</button>
+        <button data-go="track">דיוק</button>
         <button data-go="tables">טבלאות</button>
-        <button data-go="info">שיטה</button>
+        <button data-go="games">כל המשחקים</button>
       </nav>
+      <button class="menu-btn" id="menu-btn" aria-label="תפריט"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg></button>
       <span class="fresh" id="status" role="status">טוען…</span>
     </div>
   </header>
@@ -92,16 +95,19 @@
       <div id="table-box"></div>
     </section>
     <section id="view-info" class="view" hidden></section>
+    <section id="view-basket" class="view" hidden></section>
+    <section id="view-line" class="view" hidden></section>
+    <section id="view-games" class="view" hidden></section>
   </main>
 
   <div class="live-dock" id="live-dock" aria-label="תוצאות חיות"></div>
 
   <nav class="bottom-nav" aria-label="ניווט">
     <button data-go="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>ראשי</span></button>
-    <button data-go="form"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 7h8v2H8zm0 4h8v2H8zm0-8h5v2H8z"/></svg><span>הטופס</span></button>
-    <button data-go="week"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z"/></svg><span>משחקים</span></button>
+    <button data-go="form"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2.2 2.6 1.9-1 3.1H10.4l-1-3.1zM5.4 8.3l2.4.8 1 3.1-2 2.6-2.5-.1A7.9 7.9 0 0 1 5.4 8.3zm13.2 0a7.9 7.9 0 0 1 1.1 6.4l-2.5.1-2-2.6 1-3.1zM10 14.6h4l1.3 2.6-1.4 2.6a8 8 0 0 1-3.8 0l-1.4-2.6z"/></svg><span>ווינר 16</span></button>
+    <button data-go="basket"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm7.9 9h-3.9a12 12 0 0 1 2.3-5.6A8 8 0 0 1 19.9 11zM13 4.1A8 8 0 0 1 16.9 5 13.9 13.9 0 0 0 14 11h-1zm-2 0V11h-1a13.9 13.9 0 0 0-2.9-6A8 8 0 0 1 11 4.1zM5.7 5.4A12 12 0 0 1 8 11H4.1a8 8 0 0 1 1.6-5.6zM4.1 13H8a12 12 0 0 1-2.3 5.6A8 8 0 0 1 4.1 13zm6.9 6.9A8 8 0 0 1 7.1 19 13.9 13.9 0 0 0 10 13h1zm2 0V13h1a13.9 13.9 0 0 0 2.9 6 8 8 0 0 1-3.9.9zm5.3-1.3A12 12 0 0 1 16 13h3.9a8 8 0 0 1-1.6 5.6z"/></svg><span>ווינר סל</span></button>
+    <button data-go="line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v4H4zm0 6h10v4H4zm0 6h16v4H4z"/></svg><span>ליין</span></button>
     <button data-go="track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4zM6 10h3v7H6zm5-4h3v11h-3zm5 7h3v4h-3z"/></svg><span>דיוק</span></button>
-    <button data-go="tables"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v3H3zm0 5h18v3H3zm0 5h18v3H3z"/></svg><span>טבלאות</span></button>
   </nav>
 
   <div class="sheet-back" id="sheet-back" hidden></div>
@@ -111,9 +117,11 @@
   </div>
   <div class="toast" id="toast" hidden></div>
 </div>
-<script src="js/names.js?v=202611251745"></script>
-<script src="js/engine.js?v=202611251745"></script>
-<script src="js/app.js?v=202611251745"></script>
-<script src="js/live.js?v=202611251745"></script>
+<script src="js/names.js?v=202611261200"></script>
+<script src="js/engine.js?v=202611261200"></script>
+<script src="js/basket.js?v=202611261200"></script>
+<script src="js/pages.js?v=202611261200"></script>
+<script src="js/app.js?v=202611261200"></script>
+<script src="js/live.js?v=202611261200"></script>
 </body>
 </html>

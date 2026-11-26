@@ -4,4 +4,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 tools/build_data.py
+python3 tools/build_basketball.py
 node tools/train.js

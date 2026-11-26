@@ -7,7 +7,7 @@ const pct = x => (x == null || isNaN(x) ? '–' : Math.round(x * 100) + '%');
 const fx = (x, d = 1) => (x == null || isNaN(x) ? '–' : (+x).toFixed(d));
 const PRIORITY = ['isr.1', 'isr.2', 'en.1', 'es.1', 'it.1', 'de.1', 'fr.1', 'ucl', 'uel', 'uecl', 'en.2', 'nl.1', 'pt.1', 'tr.1', 'be.1', 'sco.1'];
 const DEFAULT_P = { '1': 0.45, 'X': 0.28, '2': 0.27 };
-const VIEWS = ['home', 'form', 'week', 'track', 'tables', 'info'];
+const VIEWS = ['home', 'form', 'basket', 'line', 'week', 'track', 'tables', 'games', 'info'];
 
 const S = Object.assign({
   tab: 'home', form: [],
@@ -176,7 +176,7 @@ function go(tab, push = true) {
   render();
 }
 function render() {
-  ({ home: renderHome, form: renderForm, week: renderWeek, track: renderTrack, tables: renderTables, info: renderInfo })[S.tab]();
+  ({ home: renderHome, form: renderForm, basket: renderBasket, line: renderLine, week: renderWeek, track: renderTrack, tables: renderTables, games: renderGames, info: renderInfo })[S.tab]();
 }
 
 // ---------- HOME ----------
@@ -226,7 +226,8 @@ function renderHome() {
   };
 
   $('#view-home').innerHTML = `
-    <section class="hero">
+    <section class="hero hero-home">
+      ${pitchArt()}
       <div>
         <p class="eyebrow">המחזור הקרוב · ${dmy(from)}–${dmy(to)}</p>
         <h1>הניחושים של סוף השבוע</h1>
@@ -260,6 +261,8 @@ function renderHome() {
       </div>
     </div>
 
+    ${homeBasket()}
+
     <div class="grid2">
       <div class="panel">
         <div class="section-title"><h2>שבוע שעבר</h2><button class="linkbtn" data-go="track">לכל התוצאות</button></div>
@@ -276,6 +279,17 @@ function renderHome() {
         ${M ? learnSummary(M) : '<p class="note">מודל הלמידה לא נטען.</p>'}
       </div>
     </div>`;
+}
+
+function homeBasket() {
+  if (!BSK.ok) return '';
+  const gs = bskUpcoming(3).slice(0, 40).map(g => ({ g, p: bskPredict(g.code, g.m.h, g.m.a, todayISO()) }))
+    .map(o => ({ ...o, fp: Math.max(o.p.winOT, 1 - o.p.winOT) })).sort((a, b) => b.fp - a.fp).slice(0, 6);
+  if (!gs.length) return '';
+  return `<div class="panel"><div class="section-title"><h2>🏀 כדורסל: הניחושים החזקים ל־3 הימים הקרובים</h2><button class="linkbtn" data-go="basket">לווינר סל</button></div>
+    <div class="plist">${gs.map(({ g, p, fp }) => { const L = BSK.leagues[g.code], H = L.teams[g.m.h].he, A = L.teams[g.m.a].he;
+      return `<div class="prow click" data-bmatch="${g.code}|${g.idx}"><div><div class="t">${esc(H)} – ${esc(A)}</div><div class="m">${esc(L.name)} · ${fmtDate(g.m.d, g.m.t)} · צפי <span dir="ltr">${Math.round(p.pa)}:${Math.round(p.ph)}</span></div></div>
+        <div class="r"><span class="pct">${pct(fp)}</span><span class="pick">${p.winOT >= 0.5 ? '1' : '2'}</span></div></div>`; }).join('')}</div></div>`;
 }
 
 function learnSummary(M) {
@@ -511,7 +525,8 @@ function columnsByMisses(picksList, sts) {
   });
   return { poly, pending };
 }
-function tiersOf(n) { return [n, n - 1, n - 2].filter(t => t > 0); }
+// Winner 16 pays for 12-16 correct; shorter forms show the top three tiers.
+function tiersOf(n) { return (n === 16 ? [16, 15, 14, 13, 12] : [n, n - 1, n - 2]).filter(t => t > 0); }
 function winningsOf(n, poly, prizes) {
   const rows = tiersOf(n).map(t => { const c = poly[n - t] || 0, pr = +((prizes || {})[t]) || 0; return { t, c, pr, sum: c * pr }; });
   const best = n - poly.findIndex(v => v > 0);
@@ -954,8 +969,10 @@ async function openFrozen(f) {
 // ---------- TABLES ----------
 function renderTables() {
   const codes = PRIORITY.filter(c => DB.leagues[c] && DB.leagues[c].m.some(x => x.hg != null && x.d >= seasonStart()));
+  const bcodes = BSK.ok ? BSK_ORDER.filter(c => BSK.leagues[c]) : [];
   const sel = $('#t-league');
-  sel.innerHTML = codes.map(c => `<option value="${c}">${esc(leagueName(c))}</option>`).join('');
+  sel.innerHTML = codes.map(c => `<option value="${c}">⚽ ${esc(leagueName(c))}</option>`).join('') + bcodes.map(c => `<option value="${c}">🏀 ${esc(BSK.leagues[c].name)}</option>`).join('');
+  if (bcodes.includes(S.tLeague)) { sel.value = S.tLeague; return renderBskTable(S.tLeague); }
   if (!codes.includes(S.tLeague)) S.tLeague = codes[0];
   sel.value = S.tLeague;
   const L = DB.leagues[S.tLeague];
@@ -966,6 +983,14 @@ function renderTables() {
     ${tab.map(r => `<tr class="click" data-team="${r.t}"><td class="c num">${r.pos}</td><td><span class="team">${badge(L.teams[r.t].he, L.teams[r.t].key)}<b>${esc(L.teams[r.t].he)}</b></span></td><td class="c num">${r.p}</td><td class="c num">${r.w}</td><td class="c num">${r.d}</td><td class="c num">${r.l}</td><td class="c num">${r.gf}:${r.ga}</td><td class="c num"><b>${r.pts}</b></td><td class="c"><span class="form">${r.form.map(f => `<i class="${f}">${f === 'W' ? 'נ' : f === 'D' ? 'ת' : 'ה'}</i>`).join('')}</span></td><td class="c num">${fx(F.att[r.t], 2)}</td><td class="c num">${fx(F.def[r.t], 2)}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
+function renderBskTable(code) {
+  const L = BSK.leagues[code], tab = bskStandings(L), F = bskFit(L);
+  $('#table-box').innerHTML = `<p class="note">עונה נוכחית, לפי אחוז ניצחונות. התקפה/הגנה = נקודות מעל/מתחת לממוצע הליגה (משוקלל זמן).</p>
+    <div class="tbl-wrap"><table><thead><tr><th class="c">#</th><th>קבוצה</th><th class="c">מש׳</th><th class="c">נ</th><th class="c">ה</th><th class="c">אחוז</th><th class="c">נקודות</th><th class="c">הפרש</th><th class="c">כושר</th><th class="c">התקפה</th><th class="c">הגנה</th></tr></thead><tbody>
+    ${tab.filter(r => r.p > 0).map(r => `<tr><td class="c num">${r.pos}</td><td><span class="team">${badge(L.teams[r.t].he, L.teams[r.t].key)}<b>${esc(L.teams[r.t].he)}</b></span></td><td class="c num">${r.p}</td><td class="c num">${r.w}</td><td class="c num">${r.l}</td><td class="c num">${pct(r.w / r.p)}</td><td class="c num">${r.pf}:${r.pa}</td><td class="c num">${r.pf - r.pa > 0 ? '+' : ''}${r.pf - r.pa}</td><td class="c"><span class="form">${r.form.map(f => `<i class="${f}">${f === 'W' ? 'נ' : 'ה'}</i>`).join('')}</span></td><td class="c num">${F.off[r.t] > 0 ? '+' : ''}${fx(F.off[r.t])}</td><td class="c num">${F.def[r.t] > 0 ? '+' : ''}${fx(F.def[r.t])}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
 function openTeam(code, t) {
   const L = DB.leagues[code], s = teamStats(L, t);
   const next = L.m.filter(x => x.hg == null && x.d >= todayISO() && (x.h === t || x.a === t)).slice(0, 4);
@@ -1016,6 +1041,7 @@ function closeSheet() { $('#sheet').hidden = true; $('#sheet-back').hidden = tru
 
 // ---------- events ----------
 function bind() {
+  if (typeof bindPages === 'function') bindPages();
   document.addEventListener('click', e => {
     const g = e.target.closest('[data-go]');
     if (g) { e.preventDefault(); closeSheet(); go(g.dataset.go); return; }
@@ -1108,7 +1134,7 @@ async function loadExtras() {
 (async function start() {
   document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl';
   bind();
-  try { await loadBundled(); await loadExtras(); }
+  try { await Promise.all([loadBundled(), loadBasketball()]); await loadExtras(); }
   catch (e) { $('#status').textContent = 'טעינת הנתונים נכשלה. רענן את הדף.'; return; }
   setStatus();
   const h = location.hash.slice(1);

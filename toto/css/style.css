@@ -363,3 +363,78 @@ tr.tier-on td { background: var(--good-soft); }
 @media (max-width: 420px) { .lv-row { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr); } .lv-row .pick.sm { grid-column: 1 / -1; justify-self: center; } }
 
 .lv-retry { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: .78rem; cursor: pointer; }
+
+/* ===== visual upgrade ===== */
+body { background:
+  radial-gradient(1200px 500px at 85% -10%, color-mix(in srgb, var(--o1) 10%, transparent), transparent 60%),
+  radial-gradient(900px 420px at -10% 10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
+  var(--bg); background-attachment: fixed; }
+.top { background: color-mix(in srgb, var(--pitch) 90%, transparent); -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid color-mix(in srgb, var(--pitch-ink) 10%, transparent); }
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs button { position: relative; }
+.tabs button[aria-current="page"]::after { content: ""; position: absolute; inset: auto 14px -6px; height: 3px; border-radius: 3px; background: var(--accent); }
+.menu-btn { display: none; background: none; border: 0; color: inherit; padding: 6px; border-radius: 10px; cursor: pointer; }
+.menu-btn svg { width: 24px; height: 24px; fill: currentColor; }
+@media (max-width: 820px) { .menu-btn { display: inline-grid; place-items: center; } .fresh { max-width: 38vw; } }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.menu-item { display: flex; align-items: center; gap: 10px; padding: 14px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font: 600 .95rem var(--f-body); color: var(--ink); cursor: pointer; text-align: right; }
+.menu-item span { font-size: 1.3rem; }
+.menu-item:hover { border-color: var(--accent); }
+
+/* hero */
+.hero { background:
+  radial-gradient(600px 300px at 10% 110%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+  radial-gradient(700px 360px at 100% -20%, color-mix(in srgb, #3ad08a 26%, transparent), transparent 65%),
+  linear-gradient(135deg, #06261b 0%, var(--pitch) 45%, var(--pitch-2) 100%);
+  box-shadow: 0 20px 50px -20px rgba(6, 38, 27, .55); isolation: isolate; }
+.hero-court { background:
+  radial-gradient(600px 300px at 10% 110%, color-mix(in srgb, #ff8a3d 30%, transparent), transparent 70%),
+  linear-gradient(135deg, #2a1206 0%, #5a2a0c 50%, #8a4316 100%); box-shadow: 0 20px 50px -20px rgba(60, 25, 6, .55); }
+.hero-line { background:
+  radial-gradient(600px 300px at 90% 120%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+  linear-gradient(135deg, #0b1c33 0%, #13325a 60%, #1c4c86 100%); box-shadow: 0 20px 50px -20px rgba(11, 28, 51, .55); }
+.hero::before { display: none; }
+.hero-art { position: absolute; z-index: 0 !important; left: -10px; top: 50%; transform: translateY(-50%); width: min(520px, 70%); color: var(--pitch-ink); opacity: .12; pointer-events: none; }
+@media (max-width: 700px) { .hero-art { width: 120%; left: -20%; opacity: .08; } }
+.hero-art .ball { transform: translate(150px, 90px); }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-art .ball { animation: ballrun 9s cubic-bezier(.45, 0, .3, 1) infinite; }
+  @keyframes ballrun { 0% { transform: translate(150px, 90px); } 25% { transform: translate(70px, 50px); } 50% { transform: translate(30px, 92px); } 75% { transform: translate(220px, 130px); } 100% { transform: translate(150px, 90px); } }
+}
+.hero h1 { font-size: clamp(1.9rem, 1.3rem + 2.6vw, 3rem); letter-spacing: -.02em; }
+.hero-kpi { background: color-mix(in srgb, var(--pitch-ink) 9%, transparent); border: 1px solid color-mix(in srgb, var(--pitch-ink) 14%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.hero-kpi b { font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+
+/* cards */
+.mcard, .panel { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+@media (hover: hover) { .mcard:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -14px rgba(10, 40, 26, .35); } }
+.mtitle { font-size: 1rem; margin: 0; }
+.kpi.hl { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #ff7a1a)); }
+.btn.primary { background: linear-gradient(135deg, var(--pitch-2), var(--pitch)); }
+.badge { box-shadow: inset 0 0 0 2px hsl(var(--h) 45% 50%), 0 2px 6px -2px rgba(0, 0, 0, .35); }
+
+/* probability donut */
+.donut { --deg: 180deg; width: 46px; height: 46px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  background: conic-gradient(var(--o1) var(--deg), var(--surface-2) 0); position: relative; }
+.donut::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--surface); }
+.donut b { position: relative; font: 800 .74rem var(--f-display); }
+
+/* winner sal */
+.bline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.bline select, .bline input { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; color: var(--ink); font: 500 .82rem var(--f-body); }
+.bline input { width: 90px; }
+
+/* winner line chips */
+.mchips { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.mchip { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); cursor: pointer; color: var(--ink); }
+.mchip b { font: 700 .8rem var(--f-display); }
+.mchip span { font: 700 .95rem var(--f-display); }
+.mchip em { font: 500 .7rem var(--f-display); color: var(--muted); font-style: normal; }
+.mchip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.mchip.on em { color: var(--accent-ink); }
+.mchip:hover { border-color: var(--accent); }
+
+/* games hub */
+.game-card p { color: var(--muted); }
+.game-card.yes { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+.view > h2 { margin-top: 6px; }
