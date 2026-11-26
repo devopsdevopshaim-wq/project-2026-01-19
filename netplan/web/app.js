@@ -173,7 +173,7 @@ const NP = (() => {
     $('scanbtn').disabled = !!p.running;
     $('foot').innerHTML = `${demo ? 'מצב הדגמה' : 'פועל מקומית · ' + esc(S.app.hostname)}<br>גרסה ${esc(S.app.version)} · ${esc(S.app.os)}`;
     $('banner').innerHTML = demo
-      ? `<div class="banner"><b>מצב הדגמה</b> – הנתונים כאן לדוגמה. כדי לראות את הרשת שלך הורד את NetPlan והפעל אותה במחשב (start.bat / start.sh). <a href="https://github.com/devopsdevopshaim-wq/project-2026-01-19/tree/main/netplan" target="_blank" rel="noopener">הוראות והורדה</a></div>`
+      ? `<div class="banner"><b>מצב הדגמה</b> – הנתונים כאן לדוגמה. כדי לראות את הרשת שלך הורד את NetPlan והפעל אותה במחשב (start.bat / start.sh). <a href="https://devopsdevopshaim-wq.github.io/devops-hub/netplan/#livescan" target="_blank" rel="noopener">הוראות והורדה</a></div>`
       : (!S.app.ping ? '<div class="banner">פקודת ping לא נמצאה במחשב – הסריקה משתמשת בבדיקת TCP בלבד (איטית מעט יותר).</div>' : '');
   }
 
