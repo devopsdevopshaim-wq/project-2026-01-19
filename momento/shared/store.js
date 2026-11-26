@@ -144,26 +144,83 @@
     },
   };
 
-  /* ---------- תמונות דוגמה (SVG) לאירועים ולגלריה ---------- */
-  const PALS = [['#f3c9a5', '#b5653a', '#5b2c1c'], ['#cfe0d8', '#6f9886', '#2c4a3e'], ['#f6d7de', '#c36f86', '#5e2a3b'], ['#dcd6f2', '#7d6fb8', '#352c5e'], ['#f7e6b5', '#c99a38', '#5a4313'], ['#cde3f0', '#5b8fb0', '#203f52']];
-  M.sample = function (seed = 0, people = 2) {
-    const p = PALS[Math.abs(seed) % PALS.length];
-    let bokeh = '';
-    for (let i = 0; i < 9; i++) { const x = (seed * 37 + i * 71) % 400, y = (seed * 13 + i * 53) % 180, r = 10 + ((seed + i * 7) % 26); bokeh += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${0.08 + (i % 4) * 0.05}"/>`; }
-    const fig = (x, s, h) => `<g transform="translate(${x} ${300 - h})" fill="${p[2]}"><circle cx="0" cy="${-h * 0.62}" r="${26 * s}"/><path d="M${-52 * s} ${h * 0.02} Q${-50 * s} ${-h * 0.42} 0 ${-h * 0.44} Q${50 * s} ${-h * 0.42} ${52 * s} ${h * 0.02} Z"/></g>`;
-    const xs = people === 1 ? [200] : people === 3 ? [120, 205, 290] : [160, 245];
-    const figs = xs.map((x, i) => fig(x, i === 1 && people === 3 ? 0.8 : 1, i === 1 && people === 3 ? 150 : 190 - i * 14)).join('');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/>${bokeh}${figs}</svg>`;
+  /* ---------- תמונות דוגמה: סצנת אירוע מוארת מאחור (SVG) ---------- */
+  const SCENES = [
+    { sky: ['#f6d7a8', '#d98b4e', '#5a2a18'], light: '#ffe2a8', fig: ['#2a170d', '#4b2a18'] },
+    { sky: ['#f4cfd3', '#c47584', '#3d1b28'], light: '#ffe0e6', fig: ['#2a1219', '#4a2330'] },
+    { sky: ['#e4ead8', '#93a77f', '#2d3a28'], light: '#fff6d8', fig: ['#1b2116', '#334029'] },
+    { sky: ['#3a3466', '#1d1838', '#0b0a16'], light: '#ffd27a', fig: ['#06050c', '#1a1530'] },
+    { sky: ['#f3e3c4', '#c9a36a', '#4a3518'], light: '#fff3d6', fig: ['#22180c', '#45321a'] },
+    { sky: ['#d6e4ee', '#7f9fb8', '#1f3344'], light: '#fff8e8', fig: ['#0f1a24', '#25384a'] },
+  ];
+  function person(x, h, kind, tilt, f) {
+    const s = h / 330, top = 450 - h, hr = (kind === 'kid' ? 30 : 27) * s;
+    const hy = top + 40 * s;
+    let body, hair = '';
+    if (kind === 'dress') {
+      body = `M${x - 92 * s} 452 C${x - 70 * s} ${top + 250 * s} ${x - 34 * s} ${top + 200 * s} ${x - 30 * s} ${top + 165 * s} C${x - 40 * s} ${top + 120 * s} ${x - 50 * s} ${top + 92 * s} ${x - 40 * s} ${top + 80 * s} Q${x} ${top + 70 * s} ${x + 40 * s} ${top + 80 * s} C${x + 50 * s} ${top + 92 * s} ${x + 40 * s} ${top + 120 * s} ${x + 30 * s} ${top + 165 * s} C${x + 34 * s} ${top + 200 * s} ${x + 70 * s} ${top + 250 * s} ${x + 92 * s} 452 Z`;
+      hair = `<path d="M${x - 31 * s} ${hy} C${x - 36 * s} ${hy - 38 * s} ${x + 36 * s} ${hy - 38 * s} ${x + 31 * s} ${hy} C${x + 38 * s} ${hy + 40 * s} ${x + 30 * s} ${hy + 62 * s} ${x + 20 * s} ${hy + 70 * s} L${x - 20 * s} ${hy + 70 * s} C${x - 30 * s} ${hy + 62 * s} ${x - 38 * s} ${hy + 40 * s} ${x - 31 * s} ${hy} Z"/>`;
+    } else if (kind === 'kid') {
+      body = `M${x - 46 * s} 452 L${x - 44 * s} ${top + 110 * s} Q${x - 42 * s} ${top + 78 * s} ${x - 18 * s} ${top + 74 * s} L${x + 18 * s} ${top + 74 * s} Q${x + 42 * s} ${top + 78 * s} ${x + 44 * s} ${top + 110 * s} L${x + 46 * s} 452 Z`;
+    } else {
+      body = `M${x - 72 * s} 452 L${x - 66 * s} ${top + 128 * s} Q${x - 64 * s} ${top + 86 * s} ${x - 30 * s} ${top + 78 * s} L${x - 12 * s} ${top + 72 * s} L${x + 12 * s} ${top + 72 * s} L${x + 30 * s} ${top + 78 * s} Q${x + 64 * s} ${top + 86 * s} ${x + 66 * s} ${top + 128 * s} L${x + 72 * s} 452 Z`;
+      hair = `<path d="M${x - 27 * s} ${hy - 4 * s} C${x - 26 * s} ${hy - 36 * s} ${x + 26 * s} ${hy - 36 * s} ${x + 27 * s} ${hy - 4 * s} C${x + 14 * s} ${hy - 18 * s} ${x - 14 * s} ${hy - 18 * s} ${x - 27 * s} ${hy - 4 * s} Z"/>`;
+    }
+    const shape = `${hair}<ellipse cx="${x}" cy="${hy}" rx="${hr * .9}" ry="${hr}"/><rect x="${x - 9 * s}" y="${hy + hr * .7}" width="${18 * s}" height="${16 * s}"/><path d="${body}"/>`;
+    return `<g transform="rotate(${tilt} ${x} 450)"><g fill="url(#rim)" transform="translate(${-2.2 * s} ${-1.5 * s})" opacity=".85">${shape}</g><g fill="url(#fig)">${shape}</g></g>`;
+  }
+  M.sample = function (seed = 0, people = 2, shape) {
+    const tall = shape === 'portrait';
+    const sc = SCENES[Math.abs(seed) % SCENES.length];
+    const r = (i) => { const v = Math.sin(seed * 97.13 + i * 12.9898) * 43758.5453; return v - Math.floor(v); };
+    let bokeh = '', lights = '';
+    for (let i = 0; i < 22; i++) bokeh += `<circle cx="${(r(i) * 640 - 20).toFixed(0)}" cy="${(r(i + 40) * (tall ? 450 : 300) - (tall ? 150 : 0)).toFixed(0)}" r="${(8 + r(i + 80) * 34).toFixed(0)}" fill="${i % 3 ? sc.light : '#fff'}" opacity="${(0.12 + r(i + 120) * 0.38).toFixed(2)}"/>`;
+    for (let i = 0; i <= 16; i++) { const t = i / 16, x = t * 600, y = 38 + Math.sin(t * Math.PI) * 46 + (seed % 3) * 6; lights += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="3.2" fill="${sc.light}"/><circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="11" fill="${sc.light}" opacity=".18"/>`; }
+    const xs = people === 1 ? [[300, 330, 'dress', 0]] : people === 3 ? [[205, 320, 'suit', 3], [300, 190, 'kid', 0], [395, 300, 'dress', -3]] : [[245, 335, 'suit', 4], [355, 312, 'dress', -5]];
+    const figs = xs.map(([x, h, k, t]) => person(x, h, k, t)).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${tall ? '40 -200 520 650' : '0 0 600 450'}" preserveAspectRatio="xMidYMid slice"><defs>
+<radialGradient id="sky" gradientUnits="userSpaceOnUse" cx="300" cy="270" r="${tall ? 560 : 450}"><stop offset="0" stop-color="${sc.sky[0]}"/><stop offset=".55" stop-color="${sc.sky[1]}"/><stop offset="1" stop-color="${sc.sky[2]}"/></radialGradient>
+<linearGradient id="fig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sc.fig[1]}"/><stop offset="1" stop-color="${sc.fig[0]}"/></linearGradient>
+<linearGradient id="rim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${sc.light}"/><stop offset="1" stop-color="${sc.light}" stop-opacity="0"/></linearGradient>
+<radialGradient id="vig" gradientUnits="userSpaceOnUse" cx="300" cy="${tall ? 155 : 225}" r="${tall ? 430 : 380}"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
+<radialGradient id="glow" cx="50%" cy="62%" r="40%"><stop offset="0" stop-color="${sc.light}" stop-opacity=".75"/><stop offset="1" stop-color="${sc.light}" stop-opacity="0"/></radialGradient>
+<filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
+<filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="${seed % 50}"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .45  0 0 0 0 .4  0 0 0 .09 0"/></filter></defs>
+<rect x="-300" y="-400" width="1200" height="850" fill="url(#sky)"/><g filter="url(#b)">${bokeh}</g><g opacity=".9">${lights}</g><ellipse cx="300" cy="300" rx="260" ry="190" fill="url(#glow)"/>
+${figs}<rect x="-300" y="-400" width="1200" height="850" fill="url(#vig)"/><rect x="-300" y="-400" width="1200" height="850" filter="url(#g)"/></svg>`;
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   };
 
-  /* ---------- הדמיית מוצר עם התמונה של הלקוח ---------- */
+  /* ---------- הדמיית מוצר תלת־ממדית עם התמונה של הלקוח ---------- */
   M.mockup = function (productId, photo, caption, opts = {}) {
-    const img = photo ? `style="background-image:url('${String(photo).replace(/'/g, '%27')}')"` : '';
+    const url = photo ? `url('${String(photo).replace(/'/g, '%27')}')` : '';
+    const img = url ? `style="background-image:${url}"` : '';
     const cap = caption ? `<span class="mk-cap">${esc(caption)}</span>` : '';
-    const cls = 'mk mk-' + productId + (opts.small ? ' mk-sm' : '');
-    if (productId === 'globe') return `<div class="${cls}"><div class="mk-dome"><div class="mk-photo" ${img}></div><i class="mk-snow"></i><i class="mk-gloss"></i></div><div class="mk-base">${cap}</div></div>`;
-    return `<div class="${cls}"><div class="mk-face"><div class="mk-photo" ${img}></div>${cap}<i class="mk-gloss"></i></div></div>`;
+    const cls = `mk mk-${productId}${opts.small ? ' mk-sm' : ''}${opts.flat ? ' mk-flat' : ''}${opts.tilt ? ' tiltable' : ''}`;
+    const side = url && productId === 'canvas' ? ` style="--side-img:${url}"` : '';
+    if (productId === 'globe') return `<div class="${cls}"><div class="mk-obj"><div class="mk-dome"><div class="mk-photo" ${img}></div><i class="mk-snow"></i><i class="mk-gloss"></i></div><div class="mk-base">${cap}</div></div><i class="mk-shadow"></i></div>`;
+    return `<div class="${cls}"${side}><div class="mk-obj"><div class="mk-face"><div class="mk-photo" ${img}></div>${cap}<i class="mk-gloss"></i></div><i class="mk-side"></i><i class="mk-top"></i></div><i class="mk-shadow"></i></div>`;
+  };
+
+  /* הטיית ההדמיה עם העכבר או האצבע */
+  M.tilt = function (root = document) {
+    root.querySelectorAll('.tiltable:not([data-tilt])').forEach((el) => {
+      el.dataset.tilt = '1';
+      const obj = el.querySelector('.mk-obj'); if (!obj) return;
+      const move = (cx, cy) => { const b = el.getBoundingClientRect(); const x = (cx - b.left) / b.width - 0.5, y = (cy - b.top) / b.height - 0.5; el.classList.add('tilt'); obj.style.transform = `rotateX(${(-y * 22 - 4).toFixed(1)}deg) rotateY(${(x * 46 - 6).toFixed(1)}deg)`; };
+      const reset = () => { el.classList.remove('tilt'); obj.style.transform = ''; };
+      el.addEventListener('pointermove', (e) => move(e.clientX, e.clientY));
+      el.addEventListener('pointerleave', reset);
+      el.addEventListener('touchend', reset, { passive: true });
+    });
+  };
+
+  /* חשיפה עדינה בזמן גלילה */
+  M.reveal = function (root = document) {
+    const els = root.querySelectorAll('.rv:not(.in)');
+    if (!('IntersectionObserver' in window)) { els.forEach((e) => e.classList.add('in')); return; }
+    const io = new IntersectionObserver((ents) => ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    els.forEach((e) => io.observe(e));
   };
 
   /* ---------- הודעות קופצות ---------- */
@@ -192,7 +249,7 @@
       }, extra);
     };
     const events = [
-      ev(0, 0, 'confirmed', 'חתונה', { notes: 'אירוע הדגמה – פתחו את האפליקציה עם הקוד DEMO1' }),
+      ev(0, 0, 'confirmed', 'חתונה', { theme: '#c9a463', notes: 'אירוע הדגמה – פתחו את האפליקציה עם הקוד DEMO1' }),
       ev(1, 4, 'confirmed', 'בר מצווה'), ev(2, 9, 'confirmed', 'חתונה'), ev(3, 16, 'quote', 'חינה'),
       ev(4, 23, 'lead', 'בת מצווה'), ev(5, 31, 'lead', 'אירוע חברה'), ev(6, -6, 'done', 'חתונה'), ev(7, -13, 'done', 'ברית / בריתה'),
       ev(8, -27, 'done', 'חתונה'), ev(9, -41, 'done', 'בר מצווה'), ev(10, -58, 'done', 'חתונה'), ev(11, -75, 'cancelled', 'יום הולדת'),

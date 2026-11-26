@@ -1,6 +1,6 @@
 /* מומנטו – אפליקציית אורחים: עבודה גם כשהקליטה באולם חלשה */
-const CACHE = 'momento-app-v1';
-const FILES = ['./', './index.html', './app.css?v=1', './app.js?v=1', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', '../shared/base.css?v=1', '../shared/store.js?v=1'];
+const CACHE = 'momento-app-v2';
+const FILES = ['./', './index.html', './app.css?v=2', './app.js?v=2', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', '../shared/base.css?v=2', '../shared/store.js?v=2'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', (e) => {

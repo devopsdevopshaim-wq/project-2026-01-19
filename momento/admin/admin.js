@@ -7,7 +7,10 @@
   const STATUS_CHIP = { lead: 'accent', quote: 'warn', confirmed: 'ok', done: 'info', cancelled: 'muted' };
   const ORDER_CHIP = { new: 'muted', printing: 'warn', ready: 'ok', delivered: 'info' };
   const SHOP_CHIP = { new: 'accent', paid: 'info', production: 'warn', shipped: 'ok', delivered: 'muted', cancelled: 'err' };
-  const STATUS_COLOR = { lead: '#c36f86', quote: '#c98a12', confirmed: '#2f8a5b', done: '#3d6fa8', cancelled: '#9c8f85' };
+  const STATUS_COLOR = { lead: '#b8707e', quote: '#b8801a', confirmed: '#2f7d57', done: '#3a6595', cancelled: '#9c8f85' };
+  const initials = (n) => String(n || '?').replace(/^משפחת\s+/, '').trim().split(/\s+|ו(?=\S)/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('');
+  const who = (name, sub) => `<div class="who"><span class="av">${esc(initials(name))}</span><div><b>${esc(name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div></div>`;
+  function spark(vals, color = '#b8914f') { const max = Math.max(1, ...vals), n = vals.length; const pts = vals.map((v, i) => `${(i / (n - 1)) * 80},${28 - (v / max) * 24}`).join(' '); return `<svg class="spark" viewBox="0 0 80 30" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
   const TITLES = { dashboard: 'לוח בקרה', events: 'אירועים ולידים', calendar: 'יומן אירועים', queue: 'תור הדפסה', shop: 'הזמנות מהחנות', clients: 'לקוחות', inventory: 'מלאי חומרי גלם', catalog: 'מוצרים, מחירים וחבילות', staff: 'צוות', settings: 'הגדרות' };
   let current = 'dashboard', state = { evFilter: 'all', evSearch: '', calMonth: null, queueEvent: null, shopFilter: 'open', sound: true };
   let lastOrderIds = new Set(M.db.list('orders').map((o) => o.id));
@@ -30,6 +33,7 @@
     const [v, arg] = location.hash.slice(1).split('/');
     current = TITLES[v] ? v : 'dashboard';
     if (current === 'queue' && arg) state.queueEvent = arg;
+    if (current !== 'queue') document.body.classList.remove('station');
     $$('#sideNav a').forEach((a) => a.classList.toggle('on', a.dataset.v === current));
     $('#vTitle').textContent = TITLES[current];
     $('#vActions').innerHTML = '';
@@ -108,40 +112,49 @@
     const W = 600, H = 220, bw = 54, gap = (W - 40 - bw * 6) / 5;
     const bars = months.map((x, i) => { const X = 20 + i * (bw + gap), he = (x.ev / max) * 160, hs = (x.sh / max) * 160; return `
       <g><title>${x.label}: אירועים ${F.money(x.ev)}, חנות ${F.money(x.sh)}</title>
-      <rect x="${X}" y="${185 - he}" width="${bw}" height="${he}" rx="4" fill="#b5653a"/>
-      <rect x="${X}" y="${185 - he - hs - (hs ? 2 : 0)}" width="${bw}" height="${hs}" rx="4" fill="#6f9886"/>
+      <rect x="${X}" y="${185 - he}" width="${bw}" height="${he}" rx="6" fill="#b8914f"/>
+      <rect x="${X}" y="${185 - he - hs - (hs ? 2 : 0)}" width="${bw}" height="${hs}" rx="6" fill="#6c8f80"/>
       <text x="${X + bw / 2}" y="205" text-anchor="middle">${x.label}</text>
-      <text x="${X + bw / 2}" y="${178 - he - hs}" text-anchor="middle" style="font-weight:600;fill:#2a211c">${x.ev + x.sh ? '₪' + Math.round((x.ev + x.sh) / 1000) + 'K' : ''}</text></g>`; }).join('');
+      <text x="${X + bw / 2}" y="${178 - he - hs}" text-anchor="middle" style="font-weight:700;fill:#17130f">${x.ev + x.sh ? '₪' + Math.round((x.ev + x.sh) / 1000) + 'K' : ''}</text></g>`; }).join('');
 
     const inv = M.db.get('inventory', {}), min = M.db.get('minStock', {});
     const low = Object.keys(inv).filter((k) => inv[k] < (min[k] || 0));
     actions(`<a class="btn btn-primary btn-sm" href="#events" id="qNew">+ אירוע חדש</a>`).querySelector('#qNew').onclick = (e) => { e.preventDefault(); editEvent(); };
 
+    const hr = now.getHours(), hello = hr < 12 ? 'בוקר טוב' : hr < 17 ? 'צהריים טובים' : 'ערב טוב';
+    const tEv = ev.filter((e) => e.date === today && e.status === 'confirmed');
+    const nextEv = tEv[0] || upcoming.find((e) => e.status === 'confirmed');
+    const tOrders = nextEv ? M.db.list('orders').filter((o) => o.eventId === nextEv.id) : [];
+    const todayCard = nextEv ? `<section class="today"><div class="dt"><b>${new Date(nextEv.date + 'T12:00').getDate()}</b><small>${nextEv.date === today ? 'היום' : new Date(nextEv.date + 'T12:00').toLocaleDateString('he-IL', { month: 'long' })}</small></div>
+        <div><h3>${esc(nextEv.client)} · ${esc(nextEv.type)}</h3><p>${esc(nextEv.time || '')} · ${esc(nextEv.venue || 'מקום לא נקבע')} · צוות: ${esc((nextEv.staff || []).join(', ') || 'לא שובץ')}${nextEv.date === today ? ` · ${tOrders.length} מזכרות עד עכשיו` : ''}</p></div>
+        <div class="acts"><a class="btn btn-gold btn-sm" href="#queue/${nextEv.id}">${nextEv.date === today ? 'לתור ההדפסה' : 'לתור האירוע'}</a><button class="btn btn-ghost-l btn-sm" data-ev="${nextEv.id}">פרטי האירוע</button></div></section>` : '';
     view.innerHTML = `
+      <div class="greet"><p>${hello} · ${F.dateLong(today)}</p></div>
+      ${todayCard}
       <div class="kpis">
-        <div class="kpi hl"><small>הכנסות החודש</small><b>${F.money(monthRev)}</b><span>אירועים מאושרים + חנות</span></div>
-        <div class="kpi"><small>אירועים ב־30 הימים הקרובים</small><b>${in30}</b><span>${upcoming.length} סה״כ בעתיד</span></div>
+        <div class="kpi hl"><small>הכנסות החודש</small><b>${F.money(monthRev)}</b><span>אירועים מאושרים + חנות</span>${spark(months.map((x) => x.ev + x.sh), '#e6cf9f')}</div>
+        <div class="kpi"><small>אירועים ב־30 יום</small><b>${in30}</b><span>${upcoming.length} סה״כ בעתיד</span></div>
         <div class="kpi"><small>לידים פתוחים</small><b>${leads.length}</b><span>שווי בצנרת ${F.money(pipeline)}</span></div>
         <div class="kpi"><small>יתרה לגבייה</small><b>${F.money(balance)}</b><span>מאירועים מאושרים</span></div>
-        <div class="kpi"><small>בתור הדפסה עכשיו</small><b>${queue.length}</b><span><a href="#queue">לתור ←</a></span></div>
+        <div class="kpi"><small>בתור הדפסה</small><b>${queue.length}</b><span><a class="link" href="#queue">לתור ←</a></span></div>
       </div>
       <div class="cols">
         <div>
-          <section class="panel"><h2>הכנסות ב־6 החודשים האחרונים <span style="font-size:.8rem;font-weight:500"><span class="chip accent">אירועים</span> <span class="chip ok" style="background:#e3efe9;color:#2c4a3e">חנות</span></span></h2>
+          <section class="panel"><h2>הכנסות ב־6 החודשים האחרונים <span style="font:600 .78rem var(--font)"><span class="chip plain" style="background:#f3e8d4;color:#6f5229">■ אירועים</span> <span class="chip plain" style="background:#e2ece6;color:#2c4a3e">■ חנות</span></span></h2>
             <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="גרף הכנסות חודשי"><line x1="10" x2="${W - 10}" y1="185" y2="185" stroke="#e6dcd0"/>${bars}</svg></section>
           <section class="panel"><h2>אירועים קרובים <a href="#calendar">ליומן</a></h2><div class="list">${upcoming.slice(0, 6).map(evLine).join('') || '<div class="empty">אין אירועים קרובים</div>'}</div></section>
         </div>
         <div>
           ${low.length ? `<section class="panel" style="border-color:#f0c9c3"><h2>⚠️ מלאי נמוך <a href="#inventory">למלאי</a></h2><div class="list">${low.map((k) => `<div class="li"><div class="t"><b>${esc(pName(k))}</b><small>נשארו ${inv[k]} (מינימום ${min[k]})</small></div></div>`).join('')}</div></section>` : ''}
           <section class="panel"><h2>לידים שמחכים לטיפול <a href="#events">לכל הלידים</a></h2><div class="list">${leads.slice(0, 5).map(evLine).join('') || '<div class="empty">אין לידים פתוחים 👏</div>'}</div></section>
-          <section class="panel"><h2>פעילות אחרונה</h2><div class="feed">${M.db.list('activity').slice(0, 10).map((a) => `<div><time>${F.ago(a.t)}</time><span>${esc(a.text)}</span></div>`).join('')}</div></section>
+          <section class="panel"><h2>פעילות אחרונה</h2><div class="feed">${M.db.list('activity').slice(0, 10).map((a) => `<div><i></i><span>${esc(a.text)}</span><time style="margin-inline-start:auto">${F.ago(a.t)}</time></div>`).join('')}</div></section>
         </div>
       </div>`;
     bindEvLines();
   };
   function evLine(e) {
     const d = new Date(e.date + 'T12:00');
-    return `<div class="li click" data-ev="${e.id}" style="cursor:pointer"><div class="d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('he-IL', { month: 'short' })}</small></div>
+    return `<div class="li click" data-ev="${e.id}"><div class="d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('he-IL', { month: 'short' })}</small></div>
       <div class="t"><b>${esc(e.client)}</b><small>${esc(e.type)} · ${esc(e.venue || 'מקום לא נקבע')} · ${e.guests || '?'} אורחים</small></div><span class="chip ${STATUS_CHIP[e.status]}">${C.EVENT_STATUS[e.status]}</span></div>`;
   }
   function bindEvLines() { $$('[data-ev]', view).forEach((el) => (el.onclick = () => openEvent(el.dataset.ev))); }
@@ -159,7 +172,7 @@
         ${[['all', 'הכול'], ['upcoming', 'קרובים'], ...Object.entries(C.EVENT_STATUS)].map(([k, l]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${l}${counts[k] != null ? ` (${counts[k]})` : ''}</button>`).join('')}
       </div><input class="input" id="evSearch" placeholder="חיפוש לפי שם, טלפון, אולם או קוד" value="${esc(s)}"></div>
       <section class="panel tbl-wrap"><table class="tbl"><thead><tr><th>תאריך</th><th>לקוח</th><th>סוג</th><th>מקום</th><th>חבילה</th><th>מחיר</th><th>שולם</th><th>סטטוס</th><th>מקור</th></tr></thead><tbody>
-        ${list.map((e) => `<tr class="click" data-ev="${e.id}"><td class="num">${F.date(e.date)}</td><td><b>${esc(e.client)}</b><small>${esc(e.phone)}</small></td><td>${esc(e.type)}</td><td>${esc(e.venue || '—')}</td><td>${esc(pkgName(e.pkg))}</td><td class="num">${F.money(e.price)}</td><td class="num">${F.money(e.deposit)}</td><td><span class="chip ${STATUS_CHIP[e.status]}">${C.EVENT_STATUS[e.status]}</span></td><td><small>${esc(e.source || 'ידני')}</small></td></tr>`).join('') || '<tr><td colspan="9" class="empty">לא נמצאו אירועים</td></tr>'}
+        ${list.map((e) => `<tr class="click" data-ev="${e.id}"><td class="num">${F.date(e.date)}</td><td>${who(e.client, e.phone)}</td><td>${esc(e.type)}</td><td>${esc(e.venue || '—')}</td><td>${esc(pkgName(e.pkg))}</td><td class="num">${F.money(e.price)}</td><td class="num">${F.money(e.deposit)}</td><td><span class="chip ${STATUS_CHIP[e.status]}">${C.EVENT_STATUS[e.status]}</span></td><td><small>${esc(e.source || 'ידני')}</small></td></tr>`).join('') || '<tr><td colspan="9" class="empty">לא נמצאו אירועים</td></tr>'}
       </tbody></table></section>`;
     $('#seg').onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) { state.evFilter = b.dataset.f; V.events(); } };
     const si = $('#evSearch'); si.oninput = () => { state.evSearch = si.value; const pos = si.selectionStart; V.events(); const n = $('#evSearch'); n.focus(); n.setSelectionRange(pos, pos); };
@@ -178,14 +191,14 @@
       <div class="ev-grid">
         <div>
           <p><span class="chip ${STATUS_CHIP[e.status]}">${C.EVENT_STATUS[e.status]}</span> &nbsp; ${F.dateLong(e.date)} ${esc(e.time || '')}</p>
-          <p><b>מקום:</b> ${esc(e.venue || '—')}<br><b>טלפון:</b> <a href="tel:${esc(e.phone)}">${esc(e.phone)}</a>${e.email ? ` · ${esc(e.email)}` : ''}<br><b>אורחים:</b> ${e.guests || '—'} · <b>חבילה:</b> ${esc(pkgName(e.pkg))}${pkg ? ` (${pkg.units} מזכרות)` : ''}<br><b>צוות:</b> ${esc((e.staff || []).join(', ') || 'לא שובץ')}<br><b>מוצרים באירוע:</b> ${(e.products || []).map(pName).join(', ')}<br><b>טקסט במסגרת:</b> ${esc(e.frameText || '—')}</p>
+          <dl class="facts"><dt>מקום</dt><dd>${esc(e.venue || '—')}</dd><dt>טלפון</dt><dd><a class="link" href="tel:${esc(e.phone)}">${esc(e.phone)}</a>${e.email ? ` · ${esc(e.email)}` : ''}</dd><dt>אורחים</dt><dd>${e.guests || '—'}</dd><dt>חבילה</dt><dd>${esc(pkgName(e.pkg))}${pkg ? ` · ${pkg.units} מזכרות` : ''}</dd><dt>צוות</dt><dd>${esc((e.staff || []).join(', ') || 'לא שובץ')}</dd><dt>מוצרים</dt><dd>${(e.products || []).map(pName).join(', ')}</dd><dt>על המזכרת</dt><dd>${esc(e.frameText || '—')}</dd></dl>
           ${e.notes ? `<p class="note" style="background:var(--bg2);padding:10px;border-radius:10px">${esc(e.notes)}</p>` : ''}
-          <div class="panel" style="margin:12px 0"><div class="money-row"><span>מחיר כולל</span><b>${F.money(e.price)}</b></div><div class="money-row"><span>מקדמה ששולמה</span><b>${F.money(e.deposit)}</b></div><div class="money-row"><span>יתרה</span><b>${F.money((+e.price || 0) - (+e.deposit || 0))}</b></div>
-          <div class="money-row"><span>מזכרות שהודפסו</span><b>${orders.length}${pkg ? ' / ' + pkg.units : ''}</b></div><div class="money-row" style="border:0"><span>עלות חומרים משוערת</span><b>${F.money(cost)}</b></div>
+          <div class="money"><div class="money-row"><span>מחיר כולל</span><b>${F.money(e.price)}</b></div><div class="money-row"><span>מקדמה ששולמה</span><b>${F.money(e.deposit)}</b></div><div class="money-row"><span>יתרה</span><b>${F.money((+e.price || 0) - (+e.deposit || 0))}</b></div>
+          <div class="money-row" style="display:block"><div style="display:flex;justify-content:space-between"><span>מזכרות שהודפסו</span><b>${orders.length}${pkg ? ' / ' + pkg.units : ''}</b></div>${pkg ? `<div class="progress"><i style="width:${Math.min(100, (orders.length / pkg.units) * 100)}%"></i></div>` : ''}</div><div class="money-row" style="border:0"><span>עלות חומרים משוערת</span><b>${F.money(cost)}</b></div>
           ${orders.length ? `<p style="margin:8px 0 0">${Object.entries(byProd).map(([k, n]) => `<span class="chip">${esc(pName(k))}: ${n}</span>`).join(' ')}</p>` : ''}</div>
           <label class="field"><span>שינוי סטטוס</span><select class="input" id="stSel">${Object.entries(C.EVENT_STATUS).map(([k, l]) => `<option value="${k}" ${k === e.status ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         </div>
-        <div class="qr-box"><b>קישור לאורחים</b>${qrSvg(url)}<code>${esc(e.code)}</code><a href="${esc(url)}" target="_blank">${esc(url)}</a>
+        <div class="qr-box"><b>קוד האירוע לאורחים</b>${qrSvg(url)}<code>${esc(e.code)}</code><a href="${esc(url)}" target="_blank">${esc(url)}</a>
           <div class="btn-row" style="justify-content:center"><button class="btn btn-soft btn-sm" id="copyUrl">העתקת קישור</button><button class="btn btn-soft btn-sm" id="sign">שלט QR לשולחנות</button></div></div>
       </div>
       <div class="btn-row">
@@ -308,9 +321,11 @@
     }
     const e = M.db.find('events', state.queueEvent);
     const a = actions(`<select class="input" id="qEv" style="width:auto;padding:.45em .8em">${evs.slice().reverse().map((x) => `<option value="${x.id}" ${x.id === state.queueEvent ? 'selected' : ''}>${F.date(x.date)} · ${esc(x.client)}</option>`).join('')}</select>
-      <button class="btn btn-ghost btn-sm" id="snd">${state.sound ? '🔔 צליל פעיל' : '🔕 צליל כבוי'}</button><a class="btn btn-soft btn-sm" target="_blank" href="${e ? esc(appUrl(e.code)) : '#'}">פתיחת האפליקציה ↗</a>`);
+      <button class="btn btn-gold btn-sm" id="stMode">${document.body.classList.contains('station') ? 'יציאה ממצב עמדה' : 'מצב עמדה ⤢'}</button><button class="btn btn-ghost btn-sm" id="snd">${state.sound ? '🔔 צליל פעיל' : '🔕 צליל כבוי'}</button><a class="btn btn-soft btn-sm" target="_blank" href="${e ? esc(appUrl(e.code)) : '#'}">פתיחת האפליקציה ↗</a>`);
     $('#qEv', a).onchange = (x) => { state.queueEvent = x.target.value; location.hash = 'queue/' + x.target.value; };
     $('#snd', a).onclick = () => { state.sound = !state.sound; V.queue(); };
+    $('#stMode', a).onclick = () => station(!document.body.classList.contains('station'));
+    $('#stTitle').textContent = e ? `${e.frameText || e.client} · תור הדפסה` : '';
     if (!e) { view.innerHTML = '<div class="empty">אין אירועים</div>'; return; }
     const orders = M.db.list('orders').filter((o) => o.eventId === e.id).sort((x, y) => x.createdAt - y.createdAt);
     const pkg = M.db.packages().find((k) => k.id === e.pkg);
@@ -334,6 +349,46 @@
     orders.forEach(async (o) => { const ph = await photoOf(o); const el = view.querySelector(`[data-ph="${o.id}"]`); if (el && ph) el.style.backgroundImage = `url("${ph}")`; });
     state.fresh = null;
   };
+  function station(on) {
+    document.body.classList.toggle('station', on);
+    try { if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    V.queue();
+  }
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('station')) { document.body.classList.remove('station'); if (current === 'queue') V.queue(); } });
+
+  /* חיפוש מהיר: Ctrl/⌘+K */
+  function palette() {
+    if (document.querySelector('.pal-bg')) return;
+    const bg = document.createElement('div'); bg.className = 'pal-bg';
+    bg.innerHTML = `<div class="pal" role="dialog" aria-label="חיפוש מהיר"><input placeholder="חיפוש אירוע, לקוח, טלפון, הזמנה או מסך…" aria-label="חיפוש"><ul role="listbox"></ul><div class="foot">↑↓ לבחירה · Enter לפתיחה · Esc לסגירה</div></div>`;
+    document.body.appendChild(bg);
+    const inp = bg.querySelector('input'), ul = bg.querySelector('ul');
+    let items = [], sel = 0;
+    const close = () => bg.remove();
+    const screens = Object.entries(TITLES).map(([k, t]) => ({ k: 'מסך', title: t, sub: '', run: () => (location.hash = k) }));
+    function build(q) {
+      q = q.trim();
+      const evs = events().map((e) => ({ k: 'אירוע', title: e.client, sub: `${e.type} · ${F.date(e.date)} · ${e.phone} · ${e.code}`, run: () => openEvent(e.id) }));
+      const sh = M.db.list('shop').map((o) => ({ k: 'הזמנה', title: `#${o.num} ${o.customer}`, sub: `${o.phone} · ${F.money(o.total)}`, run: () => { location.hash = 'shop'; setTimeout(() => openShop(o.id), 50); } }));
+      const all = screens.concat(evs, sh);
+      items = (q ? all.filter((x) => (x.title + ' ' + x.sub).includes(q)) : screens.concat(evs.slice(-4).reverse())).slice(0, 12);
+      sel = 0; draw();
+    }
+    function draw() { ul.innerHTML = items.map((x, i) => `<li role="option" class="${i === sel ? 'sel' : ''}" data-i="${i}"><div><b>${esc(x.title)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</div><span class="k">${x.k}</span></li>`).join('') || '<li class="muted">לא נמצאו תוצאות</li>'; }
+    inp.oninput = () => build(inp.value);
+    inp.onkeydown = (e) => {
+      if (e.key === 'ArrowDown') { sel = Math.min(items.length - 1, sel + 1); draw(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { sel = Math.max(0, sel - 1); draw(); e.preventDefault(); }
+      else if (e.key === 'Enter' && items[sel]) { close(); items[sel].run(); }
+      else if (e.key === 'Escape') close();
+    };
+    ul.onclick = (e) => { const li = e.target.closest('[data-i]'); if (li) { close(); items[+li.dataset.i].run(); } };
+    bg.addEventListener('mousedown', (e) => { if (e.target === bg) close(); });
+    build(''); inp.focus();
+  }
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !$('#shell').hidden) { e.preventDefault(); palette(); } });
+  $('#openPal').onclick = palette;
+
   function moveOrder(id, to) {
     const o = M.db.find('orders', id); if (!o) return;
     const patch = { id, status: to };
@@ -357,7 +412,7 @@
       <div class="kpis"><div class="kpi"><small>הזמנות פתוחות</small><b>${all.filter(open).length}</b></div><div class="kpi"><small>מחזור חנות (סה״כ)</small><b>${F.money(all.reduce((a, o) => a + shopTotal(o), 0))}</b></div><div class="kpi"><small>ממוצע להזמנה</small><b>${F.money(all.length ? all.reduce((a, o) => a + shopTotal(o), 0) / all.filter((o) => o.status !== 'cancelled').length : 0)}</b></div></div>
       <div class="toolbar"><div class="seg" id="seg">${[['open', 'פתוחות'], ['all', 'הכול'], ...Object.entries(C.SHOP_STATUS)].map(([k, l]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <section class="panel tbl-wrap"><table class="tbl"><thead><tr><th>מס׳</th><th>תאריך</th><th>לקוח</th><th>פריטים</th><th>משלוח</th><th>סכום</th><th>סטטוס</th></tr></thead><tbody>
-      ${list.map((o) => `<tr class="click" data-s="${o.id}"><td class="num"><b>#${o.num}</b></td><td class="num">${F.date(M.util.iso(o.createdAt))}<small>${F.time(o.createdAt)}</small></td><td><b>${esc(o.customer)}</b><small>${esc(o.phone)}</small></td><td>${o.items.map((i) => `${esc(pName(i.product))} ×${i.qty}`).join('<br>')}</td><td>${o.ship === 'pickup' ? 'איסוף' : esc(o.city || 'שליח')}</td><td class="num">${F.money(o.total)}</td><td><span class="chip ${SHOP_CHIP[o.status]}">${C.SHOP_STATUS[o.status]}</span></td></tr>`).join('') || '<tr><td colspan="7" class="empty">אין הזמנות</td></tr>'}
+      ${list.map((o) => `<tr class="click" data-s="${o.id}"><td class="num"><b>#${o.num}</b></td><td class="num">${F.date(M.util.iso(o.createdAt))}<small>${F.time(o.createdAt)}</small></td><td>${who(o.customer, o.phone)}</td><td>${o.items.map((i) => `${esc(pName(i.product))} ×${i.qty}`).join('<br>')}</td><td>${o.ship === 'pickup' ? 'איסוף' : esc(o.city || 'שליח')}</td><td class="num">${F.money(o.total)}</td><td><span class="chip ${SHOP_CHIP[o.status]}">${C.SHOP_STATUS[o.status]}</span></td></tr>`).join('') || '<tr><td colspan="7" class="empty">אין הזמנות</td></tr>'}
       </tbody></table></section>`;
     $('#seg').onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) { state.shopFilter = b.dataset.f; V.shop(); } };
     $$('[data-s]', view).forEach((tr) => (tr.onclick = () => openShop(tr.dataset.s)));
@@ -390,7 +445,7 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'clients.csv'; a.click();
     };
     view.innerHTML = `<section class="panel tbl-wrap"><table class="tbl"><thead><tr><th>לקוח</th><th>טלפון</th><th>אירועים</th><th>הזמנות חנות</th><th>סה״כ הכנסה</th><th>פעילות אחרונה</th><th></th></tr></thead><tbody>
-      ${list.map((c) => `<tr><td><b>${esc(c.name)}</b></td><td class="num">${esc(c.phone)}</td><td>${c.events}</td><td>${c.orders}</td><td class="num">${F.money(c.total)}</td><td class="num">${F.date(M.util.iso(c.last))}</td><td><a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone, 'היי ' + c.name)}">וואטסאפ</a></td></tr>`).join('')}
+      ${list.map((c) => `<tr><td>${who(c.name)}</td><td class="num">${esc(c.phone)}</td><td>${c.events}</td><td>${c.orders}</td><td class="num">${F.money(c.total)}</td><td class="num">${F.date(M.util.iso(c.last))}</td><td><a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone, 'היי ' + c.name)}">וואטסאפ</a></td></tr>`).join('')}
       </tbody></table></section>`;
   };
 

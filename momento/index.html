@@ -2,171 +2,240 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>מומנטו – מזכרות חיות לאירועים</title>
-<meta name="description" content="עמדת מזכרות לאירועים: האורחים מצטלמים ומקבלים תוך דקות בלוק עץ, בלוק קריסטל, כדור שלג, אלומיניום, קנבס או מגנט עם התמונה שלהם. וגם חנות מתנות אונליין.">
-<meta name="theme-color" content="#b5653a">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מומנטו – סטודיו למזכרות אירועים</title>
+<meta name="description" content="עמדת מזכרות יוקרתית לחתונות ולאירועים: האורחים מצטלמים ויוצאים עם בלוק עץ, קריסטל, כדור שלג, אלומיניום, קנבס או מגנט עם התמונה שלהם. חנות מתנות אונליין עם הדמיה חיה.">
+<meta name="theme-color" content="#100d0b">
+<meta property="og:title" content="מומנטו – סטודיו למזכרות אירועים">
+<meta property="og:description" content="הרגע הכי יפה בערב, יוצא איתם הביתה.">
 <link rel="icon" href="app/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared/base.css?v=1">
-<link rel="stylesheet" href="site.css?v=1">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&family=Bellefair&family=Frank+Ruhl+Libre:wght@300;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css?v=2">
+<link rel="stylesheet" href="site.css?v=2">
 </head>
 <body>
+<a class="skip" href="#main">דילוג לתוכן</a>
+
 <header class="top" id="top">
   <div class="wrap top-in">
-    <a class="logo" href="#top" aria-label="מומנטו – לדף הבית"><span class="logo-mark" aria-hidden="true">m</span><span><b data-s="brand">מומנטו</b><small data-s="tagline">מזכרות חיות לאירועים</small></span></a>
+    <a class="brand" href="#main" aria-label="מומנטו – לראש הדף">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="none" stroke="currentColor" stroke-width="1"/><path d="M11 27V15.5l5 6 4-6 4 6 5-6V27" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="brand-txt"><b data-s="brand">מומנטו</b><small>סטודיו למזכרות אירועים</small></span>
+    </a>
     <nav class="nav" id="nav" aria-label="ניווט ראשי">
-      <a href="#how">איך זה עובד</a><a href="#products">המוצרים</a><a href="#packages">חבילות</a><a href="#shop">חנות אונליין</a><a href="#faq">שאלות</a><a href="#contact">צור קשר</a>
+      <a href="#experience">החוויה</a><a href="#collection">הקולקציה</a><a href="#packages">חבילות</a><a href="#shop">חנות</a><a href="#gallery">השראה</a><a href="#faq">שאלות</a>
+      <a class="btn btn-gold btn-sm nav-cta-m" href="#book">בדיקת תאריך</a>
     </nav>
-    <a class="btn btn-primary btn-sm top-cta" href="#book">בדיקת תאריך</a>
-    <button class="burger" id="burger" aria-label="תפריט" aria-expanded="false" aria-controls="nav"><i></i><i></i><i></i></button>
+    <div class="top-act">
+      <button class="cart-btn" id="cartBtn" aria-label="סל הקניות"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><b id="cartCount" hidden>0</b></button>
+      <a class="btn btn-gold btn-sm top-cta" href="#book">בדיקת תאריך</a>
+      <button class="burger" id="burger" aria-label="פתיחת תפריט" aria-expanded="false" aria-controls="nav"><i></i><i></i></button>
+    </div>
   </div>
 </header>
 
-<main>
+<main id="main">
+  <!-- פתיח -->
   <section class="hero">
+    <div class="hero-bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="grain"></i></div>
     <div class="wrap hero-in">
       <div class="hero-text">
-        <span class="eyebrow">עמדת מזכרות לחתונות, בר מצוות ואירועים</span>
-        <h1>האורחים יוצאים מהאירוע<br>עם <em>הרגע</em> ביד.</h1>
-        <p class="lead">צלם מקצועי, עמדת הדפסה באולם ואפליקציה לאורחים. תוך דקות כל אורח מקבל בלוק עץ, קריסטל או כדור שלג עם התמונה שלו ועם העיצוב של האירוע שלכם.</p>
-        <div class="hero-cta"><a class="btn btn-primary" href="#book">בדקו אם התאריך פנוי</a><a class="btn btn-ghost" href="#shop">להזמנת מתנה אונליין</a></div>
-        <ul class="hero-points">
-          <li><b>3 דק׳</b><span>מצילום למזכרת ביד</span></li>
-          <li><b>6</b><span>סוגי מוצרים</span></li>
-          <li><b>100%</b><span>עיצוב לפי האירוע</span></li>
+        <p class="kicker rv"><span></span>עמדת מזכרות לחתונות ואירועים</p>
+        <h1 class="rv d1">הרגע הכי יפה בערב,<br><em class="gold-text">יוצא איתם הביתה.</em></h1>
+        <p class="lead rv d2">צלם מקצועי, עמדת הדפסה מעוצבת ואפליקציה לאורחים. תוך דקות כל אורח מחזיק מזכרת עם התמונה שלו ועם העיצוב של האירוע שלכם, על עץ, קריסטל או בכדור שלג.</p>
+        <div class="hero-cta rv d3"><a class="btn btn-gold btn-lg" href="#book">בדיקת זמינות לתאריך <span class="arr">←</span></a><a class="btn btn-ghost-l btn-lg" href="#try">נסו עם תמונה שלכם</a></div>
+        <ul class="hero-facts rv d4">
+          <li><b>3</b><span>דקות מצילום<br>למזכרת ביד</span></li>
+          <li><b>6</b><span>חומרים<br>לבחירה</span></li>
+          <li><b>1:1</b><span>עיצוב אישי<br>לכל אירוע</span></li>
         </ul>
       </div>
-      <div class="hero-art" id="heroArt" aria-hidden="true"></div>
+      <div class="hero-stage" id="heroStage">
+        <div class="spot" aria-hidden="true"></div>
+        <div class="hero-prod" id="heroProd" aria-live="polite"></div>
+        <div class="hero-meta"><span id="heroName"></span><div class="dots" id="heroDots" role="tablist" aria-label="מוצרים"></div></div>
+      </div>
+    </div>
+    <div class="marquee" aria-hidden="true"><div class="mq"><span>חתונות</span><span>בר מצוות</span><span>בת מצוות</span><span>בריתות</span><span>חינות</span><span>אירועי חברה</span><span>ימי הולדת</span><span>חתונות</span><span>בר מצוות</span><span>בת מצוות</span><span>בריתות</span><span>חינות</span><span>אירועי חברה</span><span>ימי הולדת</span></div></div>
+  </section>
+
+  <!-- נסו בעצמכם -->
+  <section class="try" id="try">
+    <div class="wrap try-in">
+      <div class="try-text rv">
+        <p class="kicker dark"><span></span>נסו עכשיו</p>
+        <h2>ראו את התמונה שלכם<br>על כל המוצרים</h2>
+        <p>בחרו תמונה מהטלפון או מהמחשב. היא לא עולה לשום מקום, ההדמיה נוצרת אצלכם במכשיר.</p>
+        <label class="btn btn-primary try-btn"><input type="file" accept="image/*" id="tryFile" hidden>בחירת תמונה</label>
+        <p class="try-hint" id="tryHint">העבירו את העכבר על המוצרים כדי לסובב אותם</p>
+      </div>
+      <div class="try-row" id="tryRow"></div>
     </div>
   </section>
 
-  <section class="sec" id="how">
+  <!-- החוויה -->
+  <section class="sec" id="experience">
+    <div class="wrap exp">
+      <div class="exp-visual rv">
+        <figure class="frame-img"><div class="img" id="expImg"></div><figcaption>הצלם מסתובב בין השולחנות, העמדה מדפיסה, האורחים אוספים</figcaption></figure>
+        <div class="exp-float" id="expFloat" aria-hidden="true"></div>
+      </div>
+      <div class="exp-text">
+        <header class="sec-head start rv"><p class="kicker dark"><span></span>החוויה</p><h2>אתם נהנים מהאירוע.<br>אנחנו דואגים לכל השאר.</h2></header>
+        <ol class="steps">
+          <li class="rv"><b>01</b><div><h3>תכנון ועיצוב</h3><p>שיחת היכרות, בחירת חבילה ומוצרים. המעצבת שלנו בונה מסגרת עם השמות, התאריך, הפונט והצבעים של האירוע, ושולחת הדמיה לאישור.</p></div></li>
+          <li class="rv"><b>02</b><div><h3>צילום בין השולחנות</h3><p>צלם מקצועי עם תאורה. אורחים יכולים גם לסרוק QR מהשולחן, להצטלם בטלפון ולשלוח ישר להדפסה, בלי להוריד אפליקציה.</p></div></li>
+          <li class="rv"><b>03</b><div><h3>הדפסה באולם</h3><p>כל תמונה נכנסת לתור בעמדה ומודפסת במקום. האורח מקבל הודעה בטלפון ברגע שהמזכרת שלו מוכנה לאיסוף.</p></div></li>
+          <li class="rv"><b>04</b><div><h3>אלבום דיגיטלי</h3><p>אחרי האירוע אתם מקבלים גלריה עם כל התמונות והברכות שהאורחים כתבו.</p></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- הקולקציה -->
+  <section class="sec sec-tone" id="collection">
     <div class="wrap">
-      <header class="sec-head"><span class="eyebrow">איך זה עובד</span><h2>ארבעה צעדים, אפס מאמץ מצדכם</h2></header>
-      <ol class="steps">
-        <li><i>1</i><h3>מתאמים ומעצבים</h3><p>בוחרים חבילה ומוצרים. המעצבת שלנו בונה מסגרת עם השמות, התאריך והצבעים של האירוע.</p></li>
-        <li><i>2</i><h3>מצטלמים באירוע</h3><p>הצלם שלנו מסתובב בין השולחנות. אורחים יכולים גם לסרוק QR ולשלוח תמונה מהטלפון.</p></li>
-        <li><i>3</i><h3>מדפיסים במקום</h3><p>התמונה נכנסת לתור ההדפסה בעמדה ומוכנה תוך דקות. האורח מקבל הודעה כשהמזכרת מחכה לו.</p></li>
-        <li><i>4</i><h3>אלבום דיגיטלי</h3><p>אחרי האירוע מקבלים גלריה עם כל התמונות, לשיתוף עם המשפחה והחברים.</p></li>
-      </ol>
+      <header class="sec-head rv"><p class="kicker dark"><span></span>הקולקציה</p><h2>שישה חומרים. מזכרת אחת שנשארת על המדף.</h2><p>כל המוצרים זמינים בעמדה באירוע וגם להזמנה אונליין עם כל תמונה שתבחרו.</p></header>
+      <div class="coll rv">
+        <div class="coll-list" id="collList" role="tablist" aria-label="מוצרים"></div>
+        <div class="coll-stage" id="collStage"></div>
+        <div class="coll-info" id="collInfo"></div>
+      </div>
     </div>
   </section>
 
-  <section class="sec sec-alt" id="products">
-    <div class="wrap">
-      <header class="sec-head"><span class="eyebrow">המוצרים</span><h2>מזכרת שלא נשארת במגירה</h2><p>כל המוצרים זמינים בעמדה באירוע וגם להזמנה אונליין, עם כל תמונה שתבחרו.</p></header>
-      <div class="prod-grid" id="prodGrid"></div>
-    </div>
-  </section>
-
+  <!-- חבילות -->
   <section class="sec" id="packages">
     <div class="wrap">
-      <header class="sec-head"><span class="eyebrow">חבילות לאירועים</span><h2>בחרו חבילה, אנחנו דואגים לכל השאר</h2><p>המחירים כוללים צלם, עמדה, ציוד, עיצוב והתקנה. מזכרת נוספת מעבר לחבילה: <b id="extraUnit"></b>.</p></header>
+      <header class="sec-head rv"><p class="kicker dark"><span></span>חבילות לאירועים</p><h2>מחיר אחד, הכול כלול</h2><p>צלם, עמדה, ציוד, עיצוב, התקנה ופירוק. מזכרת נוספת מעבר לחבילה: <b id="extraUnit"></b></p></header>
       <div class="pkg-grid" id="pkgGrid"></div>
+      <div class="center rv"><button class="link cmp-toggle" id="cmpToggle" aria-expanded="false">השוואה מלאה בין החבילות ↓</button></div>
+      <div class="cmp" id="cmp" hidden></div>
     </div>
   </section>
 
-  <section class="sec sec-dark" id="book">
-    <div class="wrap book-in">
-      <div class="book-text">
-        <span class="eyebrow">בדיקת תאריך והצעת מחיר</span>
-        <h2>בדקו זמינות וקבלו הערכת מחיר עכשיו</h2>
-        <p>מלאו את הפרטים, המחיר מתעדכן תוך כדי. נחזור אליכם עם הצעה מסודרת ועם הדמיה של העיצוב.</p>
-        <div class="quote-box" aria-live="polite">
-          <div class="avail" id="avail">בחרו תאריך לבדיקת זמינות</div>
-          <dl id="quoteLines"></dl>
-          <div class="quote-total"><span>הערכה כוללת</span><b id="quoteTotal">₪0</b></div>
-          <small>המחיר כולל מע״מ. הצעה סופית תישלח אחרי שיחה קצרה.</small>
-        </div>
+  <!-- הזמנת אירוע -->
+  <section class="sec sec-night" id="book">
+    <div class="wrap">
+      <header class="sec-head rv"><p class="kicker"><span></span>בדיקת תאריך והצעת מחיר</p><h2>ארבעה צעדים קצרים<br>ואתם יודעים בדיוק כמה זה עולה</h2></header>
+      <div class="wiz rv">
+        <form class="wiz-main" id="wiz" novalidate>
+          <ol class="wiz-steps" id="wizSteps"><li class="on"><i>1</i>סוג האירוע</li><li><i>2</i>תאריך ואורחים</li><li><i>3</i>חבילה</li><li><i>4</i>פרטים</li></ol>
+          <fieldset class="wiz-pane on" data-step="0"><legend>איזה אירוע חוגגים?</legend><div class="type-grid" id="typeGrid"></div></fieldset>
+          <fieldset class="wiz-pane" data-step="1"><legend>מתי ובכמה אורחים?</legend>
+            <div class="grid2">
+              <label class="field"><span>תאריך האירוע</span><input class="input" type="date" id="bDate" required></label>
+              <label class="field"><span>מקום האירוע</span><input class="input" id="bVenue" placeholder="שם האולם והעיר"></label>
+            </div>
+            <div class="avail" id="avail" aria-live="polite">בחרו תאריך ונבדוק זמינות מיד</div>
+            <label class="field guests"><span>מספר אורחים: <b id="gOut">300</b></span><input type="range" id="bGuests" min="50" max="1000" step="10" value="300"><small><span>50</span><span>1,000</span></small></label>
+          </fieldset>
+          <fieldset class="wiz-pane" data-step="2"><legend>בחרו חבילה</legend><div class="pkg-pick" id="pkgPick"></div></fieldset>
+          <fieldset class="wiz-pane" data-step="3"><legend>לאן לשלוח את ההצעה?</legend>
+            <div class="grid2">
+              <label class="field"><span>שם מלא</span><input class="input" id="bName" required autocomplete="name"></label>
+              <label class="field"><span>טלפון</span><input class="input" id="bPhone" type="tel" required autocomplete="tel" inputmode="tel" pattern="0[0-9\-]{8,11}"></label>
+            </div>
+            <label class="field" style="margin-top:14px"><span>שמות למסגרת, צבעים, בקשות (לא חובה)</span><textarea class="input" id="bNotes" placeholder="למשל: נועה ואורי, גוונים של שמפניה וירוק זית"></textarea></label>
+          </fieldset>
+          <div class="wiz-nav"><button type="button" class="btn btn-ghost-l" id="wPrev" hidden>→ חזרה</button><button type="button" class="btn btn-gold" id="wNext">המשך <span class="arr">←</span></button></div>
+        </form>
+        <aside class="wiz-sum" aria-live="polite">
+          <p class="sum-k">ההצעה שלכם</p>
+          <dl id="sumLines"></dl>
+          <div class="sum-total"><span>הערכה כוללת</span><b id="sumTotal">—</b></div>
+          <small>כולל מע״מ. מחיר סופי אחרי שיחה קצרה. בלי התחייבות.</small>
+          <a class="wa-mini" id="waBook" target="_blank" rel="noopener">מעדיפים לדבר? וואטסאפ ←</a>
+        </aside>
       </div>
-      <form class="card book-form" id="bookForm" novalidate>
-        <div class="grid2">
-          <label class="field"><span>סוג האירוע</span><select class="input" name="type" id="bType"></select></label>
-          <label class="field"><span>תאריך</span><input class="input" type="date" name="date" id="bDate" required></label>
-          <label class="field"><span>מספר אורחים</span><input class="input" type="number" name="guests" id="bGuests" min="20" max="2000" value="300" required></label>
-          <label class="field"><span>חבילה</span><select class="input" name="pkg" id="bPkg"></select></label>
-          <label class="field"><span>שם מלא</span><input class="input" name="client" required autocomplete="name"></label>
-          <label class="field"><span>טלפון</span><input class="input" name="phone" type="tel" required autocomplete="tel" inputmode="tel" pattern="[0-9\-+ ]{9,15}"></label>
-        </div>
-        <label class="field" style="margin-top:14px"><span>מקום האירוע</span><input class="input" name="venue" placeholder="שם האולם והעיר"></label>
-        <label class="field" style="margin-top:14px"><span>הערות (לא חובה)</span><textarea class="input" name="notes" placeholder="שמות לעיצוב, צבעים, בקשות מיוחדות"></textarea></label>
-        <button class="btn btn-primary btn-block" style="margin-top:18px" type="submit">שלחו לי הצעת מחיר</button>
-        <a class="wa-line" id="waLine" target="_blank" rel="noopener">או דברו איתנו ישר בוואטסאפ</a>
-      </form>
     </div>
   </section>
 
+  <!-- חנות -->
   <section class="sec" id="shop">
     <div class="wrap">
-      <header class="sec-head"><span class="eyebrow">חנות אונליין</span><h2>מתנה עם התמונה שלכם, עד הבית</h2><p>מעלים תמונה, רואים איך זה ייראה, ומזמינים. ייצור תוך 3–5 ימי עסקים.</p></header>
-      <div class="shop">
-        <div class="shop-preview card">
-          <div class="shop-stage" id="shopStage"></div>
-          <p class="muted-s" id="shopHint">ההדמיה מתעדכנת לפי התמונה, המוצר והכיתוב</p>
-        </div>
-        <form class="shop-form card" id="shopForm">
-          <div class="field"><span>1. בחרו מוצר</span><div class="pick" id="shopProducts" role="radiogroup" aria-label="מוצר"></div></div>
-          <div class="field"><span>2. גודל</span><div class="pick pick-sizes" id="shopSizes" role="radiogroup" aria-label="גודל"></div></div>
-          <div class="field"><span>3. התמונה שלכם</span>
-            <label class="upload" id="upload"><input type="file" accept="image/*" id="shopFile"><b>בחרו תמונה מהמכשיר</b><small>JPG או PNG, עדיף באיכות גבוהה</small></label>
-          </div>
-          <label class="field"><span>4. כיתוב (לא חובה)</span><input class="input" id="shopCap" maxlength="40" placeholder="לדוגמה: לסבתא באהבה"></label>
+      <header class="sec-head rv"><p class="kicker dark"><span></span>חנות אונליין</p><h2>מתנה עם התמונה שלכם, עד הבית</h2><p>מעלים תמונה, רואים את המוצר כמו שהוא ייראה, ומזמינים. לפני ההדפסה אתם מקבלים הדמיה לאישור.</p></header>
+      <div class="shop rv">
+        <div class="shop-stage-wrap"><div class="shop-stage" id="shopStage"></div><p class="shop-cap" id="shopHint"></p></div>
+        <form class="shop-form" id="shopForm">
+          <div class="field"><span>המוצר</span><div class="pick" id="shopProducts" role="radiogroup" aria-label="מוצר"></div></div>
+          <div class="field"><span>הגודל</span><div class="pick sizes" id="shopSizes" role="radiogroup" aria-label="גודל"></div></div>
+          <div class="field"><span>התמונה</span><label class="upload" id="upload"><input type="file" accept="image/*" id="shopFile"><span class="up-ico" aria-hidden="true">↑</span><span><b id="upTitle">העלאת תמונה</b><small>JPG או PNG. כדאי באיכות גבוהה</small></span></label></div>
+          <label class="field"><span>כיתוב על המוצר (לא חובה)</span><input class="input" id="shopCap" maxlength="40" placeholder="לדוגמה: לסבתא, באהבה"></label>
           <div class="shop-buy">
-            <label class="qty"><button type="button" data-q="-1" aria-label="פחות">−</button><input id="shopQty" type="number" value="1" min="1" max="50" aria-label="כמות"><button type="button" data-q="1" aria-label="יותר">+</button></label>
-            <b class="shop-price" id="shopPrice"></b>
+            <div class="qty"><button type="button" data-q="1" aria-label="יותר">+</button><input id="shopQty" type="number" value="1" min="1" max="50" aria-label="כמות"><button type="button" data-q="-1" aria-label="פחות">−</button></div>
+            <div class="price-box"><small>מחיר</small><b id="shopPrice"></b></div>
             <button class="btn btn-primary" type="submit">הוספה לסל</button>
           </div>
+          <ul class="perks"><li>הדמיה לאישור לפני הדפסה</li><li>ייצור 3–5 ימי עסקים</li><li>משלוח עד הבית או איסוף</li></ul>
         </form>
       </div>
     </div>
   </section>
 
-  <section class="sec sec-alt" id="gallery">
+  <!-- השראה -->
+  <section class="sec sec-tone" id="gallery">
     <div class="wrap">
-      <header class="sec-head"><span class="eyebrow">השראה</span><h2>ככה זה נראה על השולחן</h2></header>
+      <header class="sec-head rv"><p class="kicker dark"><span></span>השראה</p><h2>ככה זה נראה על השולחן</h2></header>
       <div class="gallery" id="galleryGrid"></div>
     </div>
   </section>
 
+  <!-- התחייבויות -->
+  <section class="promise">
+    <div class="wrap promise-in">
+      <div class="rv"><b>הדמיה לפני הכול</b><span>כל עיצוב נשלח אליכם לאישור לפני האירוע</span></div>
+      <div class="rv d1"><b>צוות מקצועי</b><span>צלם ומפעיל עמדה לאורך כל האירוע</span></div>
+      <div class="rv d2"><b>ציוד מלא</b><span>מגיעים עם עמדה, תאורה, מדפסות ושילוט</span></div>
+      <div class="rv d3"><b>שקיפות במחיר</b><span>מחיר קבוע לחבילה ולכל מזכרת נוספת</span></div>
+    </div>
+  </section>
+
+  <!-- שאלות -->
   <section class="sec" id="faq">
-    <div class="wrap narrow">
-      <header class="sec-head"><span class="eyebrow">שאלות נפוצות</span><h2>כל מה שרציתם לדעת</h2></header>
-      <div class="faq">
-        <details><summary>כמה זמן לוקח להכין מזכרת באירוע?</summary><p>בלוק עץ ומגנט מוכנים תוך 1–3 דקות. בלוק קריסטל וכדור שלג לוקחים 4–5 דקות. האורח מקבל הודעה באפליקציה כשהמזכרת מוכנה.</p></details>
-        <details><summary>כמה מקום העמדה צריכה?</summary><p>שולחן של כ־2 מטר ושקע חשמל אחד. אנחנו מביאים מפה, תאורה, מדפסות ושילוט.</p></details>
-        <details><summary>האם אפשר לעצב את המסגרת?</summary><p>כן. כל אירוע מקבל עיצוב משלו עם שמות, תאריך, צבעים ופונט. שולחים לכם הדמיה לאישור לפני האירוע.</p></details>
-        <details><summary>מה קורה אם יש יותר אורחים ממספר המזכרות בחבילה?</summary><p>מוסיפים מזכרות במחיר קבוע ליחידה. אפשר לקבוע תקרה מראש, והמערכת שלנו עוצרת כשמגיעים אליה.</p></details>
-        <details><summary>איך האורחים שולחים תמונה מהטלפון?</summary><p>על כל שולחן יש שלט עם קוד QR. סורקים, מצטלמים או בוחרים תמונה, בוחרים מוצר ושולחים. בלי להוריד שום אפליקציה.</p></details>
-        <details><summary>כמה זמן לוקחת הזמנה מהחנות?</summary><p>3–5 ימי עסקים לייצור ועוד 1–3 ימים למשלוח. אפשר גם איסוף עצמי.</p></details>
+    <div class="wrap faq-wrap">
+      <header class="sec-head start rv"><p class="kicker dark"><span></span>שאלות נפוצות</p><h2>כל מה שרציתם לשאול</h2><p>לא מצאתם תשובה? <a class="link" id="faqWa" target="_blank" rel="noopener">כתבו לנו בוואטסאפ</a></p></header>
+      <div class="faq rv">
+        <details><summary>כמה זמן לוקח להכין מזכרת באירוע?</summary><p>בלוק עץ ומגנט מוכנים תוך 1–3 דקות. בלוק קריסטל וכדור שלג לוקחים 4–5 דקות. האורח מקבל הודעה בטלפון כשהמזכרת מוכנה.</p></details>
+        <details><summary>כמה מקום העמדה צריכה?</summary><p>שולחן של כ־2 מטר ושקע חשמל אחד. אנחנו מביאים מפה, תאורה, מדפסות ושילוט מעוצב.</p></details>
+        <details><summary>אפשר לעצב את המסגרת לפי האירוע?</summary><p>כן, כל אירוע מקבל עיצוב משלו: שמות, תאריך, צבעים ופונט. שולחים לכם הדמיה לאישור לפני האירוע.</p></details>
+        <details><summary>מה קורה אם יש יותר אורחים ממספר המזכרות בחבילה?</summary><p>מוסיפים מזכרות במחיר קבוע ליחידה. אפשר גם לקבוע תקרה מראש, והמערכת עוצרת כשמגיעים אליה.</p></details>
+        <details><summary>איך האורחים שולחים תמונה מהטלפון?</summary><p>על כל שולחן יש שלט עם קוד QR. סורקים, מצטלמים או בוחרים תמונה, בוחרים מוצר ושולחים. אין צורך להוריד אפליקציה.</p></details>
+        <details><summary>כמה זמן לוקחת הזמנה מהחנות?</summary><p>3–5 ימי עסקים לייצור ועוד 1–3 ימים במשלוח. אפשר גם איסוף עצמי.</p></details>
       </div>
     </div>
   </section>
 
-  <section class="sec sec-alt" id="contact">
-    <div class="wrap contact">
-      <div><span class="eyebrow">צור קשר</span><h2>נשמח לשמוע על האירוע שלכם</h2><p>זמינים א׳–ה׳ 9:00–20:00, ו׳ עד 13:00. עובדים <span data-s="area">בכל הארץ</span>.</p></div>
-      <div class="contact-links">
-        <a class="c-link" id="cPhone"><b>טלפון</b><span data-s="phone"></span></a>
-        <a class="c-link" id="cWa" target="_blank" rel="noopener"><b>וואטסאפ</b><span>שלחו הודעה</span></a>
-        <a class="c-link" id="cMail"><b>אימייל</b><span data-s="email"></span></a>
-      </div>
+  <!-- סיום -->
+  <section class="finale" id="contact">
+    <div class="wrap finale-in">
+      <h2 class="rv">בואו נתכנן<br><em class="gold-text">את הרגע שלכם.</em></h2>
+      <p class="rv d1">זמינים א׳–ה׳ 9:00–20:00, ו׳ עד 13:00 · <span data-s="area">כל הארץ</span></p>
+      <div class="finale-cta rv d2"><a class="btn btn-gold btn-lg" href="#book">בדיקת תאריך</a><a class="btn btn-ghost-l btn-lg" id="cWa" target="_blank" rel="noopener">וואטסאפ</a></div>
+      <div class="contact-row rv d3"><a id="cPhone"><small>טלפון</small><span data-s="phone"></span></a><a id="cMail"><small>אימייל</small><span data-s="email"></span></a></div>
     </div>
   </section>
 </main>
 
 <footer class="foot">
   <div class="wrap foot-in">
-    <span>© <span id="year"></span> <span data-s="brand">מומנטו</span>. כל הזכויות שמורות.</span>
-    <nav aria-label="קישורים"><a href="app/">אפליקציית אורחים</a><a href="admin/">כניסת צוות</a></nav>
+    <span>© <span id="year"></span> <span data-s="brand">מומנטו</span> · סטודיו למזכרות אירועים</span>
+    <nav aria-label="קישורים נוספים"><a href="app/">אפליקציית אורחים</a><a href="admin/">כניסת צוות</a></nav>
   </div>
 </footer>
 
-<button class="cart-fab" id="cartFab" aria-label="סל הקניות"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM5.2 4l.4 2H21l-2 8H7.4l.4 2H19v2H6.2L3.6 4H1V2h3.9l.3 2Z"/></svg><b id="cartCount">0</b></button>
-<a class="wa-fab" id="waFab" target="_blank" rel="noopener" aria-label="וואטסאפ"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .3-3.4-.7-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg></a>
+<div class="mbar" id="mbar"><a class="btn btn-ghost btn-sm" id="mWa" target="_blank" rel="noopener">וואטסאפ</a><a class="btn btn-primary btn-sm" href="#book">בדיקת תאריך</a></div>
 
-<script src="shared/store.js?v=1"></script>
-<script src="site.js?v=1"></script>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="סל הקניות">
+  <div class="drawer-bg" data-close></div>
+  <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drTitle">
+    <header class="drawer-head"><h3 id="drTitle">הסל שלי</h3><button class="x" data-close aria-label="סגירה">×</button></header>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+</aside>
+
+<script src="shared/store.js?v=2"></script>
+<script src="site.js?v=2"></script>
 </body>
 </html>
