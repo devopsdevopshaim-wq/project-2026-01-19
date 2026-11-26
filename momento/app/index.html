@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מומנטו – אפליקציית אורחים</title>
+<meta name="theme-color" content="#b5653a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/base.css?v=1">
+<link rel="stylesheet" href="app.css?v=1">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <button class="bar-btn" id="back" aria-label="חזרה" hidden>→</button>
+    <div class="bar-title"><b id="evTitle">מומנטו</b><small id="evSub">מזכרות חיות לאירועים</small></div>
+    <button class="bar-btn" id="mine" aria-label="ההזמנות שלי" hidden><span id="mineCount">0</span></button>
+  </header>
+  <main class="screen" id="screen"></main>
+  <nav class="tabs" id="tabs" hidden>
+    <button data-go="home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm8-3h-3.2L15 2H9L7.2 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/></svg>מזכרת חדשה</button>
+    <button data-go="orders"><svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-7 14-5-5 1.4-1.4 3.6 3.6 7.6-7.6L21 8Z"/></svg>ההזמנות שלי</button>
+    <button data-go="gallery"><svg viewBox="0 0 24 24"><path d="M22 16V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2Zm-11-4 2 2.7 3-3.7 4 5H8ZM2 6v14a2 2 0 0 0 2 2h14v-2H4V6Z"/></svg>גלריה</button>
+  </nav>
+</div>
+<input type="file" accept="image/*" capture="user" id="camFile" hidden>
+<input type="file" accept="image/*" id="libFile" hidden>
+<script src="../shared/store.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>

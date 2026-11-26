@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מומנטו – ניהול</title>
+<meta name="theme-color" content="#2a211c">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../app/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/base.css?v=1">
+<link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+<div class="login" id="login" hidden>
+  <form class="card login-box" id="loginForm">
+    <div class="logo-mark">m</div>
+    <h1>כניסת צוות</h1>
+    <p>הזינו קוד כניסה (בהדגמה: 1234)</p>
+    <input class="input pin" id="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password" aria-label="קוד כניסה">
+    <button class="btn btn-primary btn-block">כניסה</button>
+    <a href="../">← לאתר</a>
+  </form>
+</div>
+
+<div class="shell" id="shell" hidden>
+  <aside class="side" id="side">
+    <div class="side-logo"><span class="logo-mark">m</span><div><b id="brandName">מומנטו</b><small>מערכת ניהול</small></div></div>
+    <nav class="side-nav" id="sideNav">
+      <a href="#dashboard" data-v="dashboard"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3Zm0 8h8v-6H3Zm10 0h8V11h-8Zm0-18v6h8V3Z"/></svg>לוח בקרה</a>
+      <a href="#events" data-v="events"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14ZM7 12h5v5H7Z"/></svg>אירועים ולידים<em id="nLeads"></em></a>
+      <a href="#calendar" data-v="calendar"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V9h14Z"/></svg>יומן</a>
+      <a href="#queue" data-v="queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3Zm-3 11H8v-5h8Zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm-1-9H6v4h12Z"/></svg>תור הדפסה<em id="nQueue"></em></a>
+      <a href="#shop" data-v="shop"><svg viewBox="0 0 24 24"><path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM5.2 4l.4 2H21l-2 8H7.4l.4 2H19v2H6.2L3.6 4H1V2h3.9Z"/></svg>הזמנות חנות<em id="nShop"></em></a>
+      <a href="#clients" data-v="clients"><svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5C15 14.2 10.3 13 8 13Zm8 0h-1a4.2 4.2 0 0 1 2 3.5V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z"/></svg>לקוחות</a>
+      <a href="#inventory" data-v="inventory"><svg viewBox="0 0 24 24"><path d="M20 2H4v4h16Zm-1 6H5v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2Zm-4 5H9v-2h6Z"/></svg>מלאי<em id="nStock" class="warn"></em></a>
+      <a href="#catalog" data-v="catalog"><svg viewBox="0 0 24 24"><path d="M21.4 11.6 12.4 2.6A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7c0 .6.2 1.1.6 1.4l9 9a2 2 0 0 0 2.8 0l7-7a2 2 0 0 0 0-2.8ZM5.5 7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>מוצרים וחבילות</a>
+      <a href="#staff" data-v="staff"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4Z"/></svg>צוות</a>
+      <a href="#settings" data-v="settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>הגדרות</a>
+    </nav>
+    <div class="side-foot"><a href="../" target="_blank">האתר ↗</a><a href="../app/" target="_blank">אפליקציה ↗</a><button id="logout">יציאה</button></div>
+  </aside>
+  <div class="main">
+    <header class="mtop"><button class="burger" id="burger" aria-label="תפריט">☰</button><h1 id="vTitle">לוח בקרה</h1><div class="mtop-act" id="vActions"></div></header>
+    <div class="view" id="view"></div>
+  </div>
+</div>
+
+<script src="../shared/qrcode.js"></script>
+<script src="../shared/store.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>
