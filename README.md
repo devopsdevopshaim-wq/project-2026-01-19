@@ -4,6 +4,10 @@
 
 Site: https://devopsdevopshaim-wq.github.io/project-2026-01-19/
 
+## 🖧 NetPlan – ניהול וניטור רשת מקומית
+
+תוכנה למחשב (Windows / Linux / macOS): מחברים כבל רשת והיא מזהה את החיבור, ממפה את כל המכשירים והנתבים בדרך, בודקת אבטחה וזליגה ומנטרת תקלות עם פתרונות. הוראות התקנה: [netplan/README.md](netplan/README.md) · תצוגה מקדימה: https://devopsdevopshaim-wq.github.io/project-2026-01-19/netplan/web/
+
 ## ⚽ טוטו חכם – מערכת ניחושים לטוטו כדורגל
 
 **לפתוח:** https://devopsdevopshaim-wq.github.io/project-2026-01-19/toto/
