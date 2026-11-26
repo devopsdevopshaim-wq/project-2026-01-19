@@ -166,7 +166,7 @@ vm.runInContext(`(async () => {
   const entry = { date: TODAY, live: { w: LIVE.w, mix: LIVE.mix }, calibUsed: useCal, calib: liveCal, holdout: evalAll.combined, lastWeek, recent90: { without: withoutCal, with: withCal } };
   if (!prev || prev.date !== TODAY) log.push(entry); else log[log.length - 1] = entry;
   fs.writeFileSync(logFile, JSON.stringify(log));
-  const model = { updated: TODAY, hold: HOLD, live: LIVE, holdoutWeights: PH, eval: evalAll, perLeague, buckets, lastWeek,
+  const model = { updated: TODAY, updatedAt: TODAY + ' ' + nowIL, hold: HOLD, live: LIVE, holdoutWeights: PH, eval: evalAll, perLeague, buckets, lastWeek,
     calibration: { used: useCal, recent90: { without: withoutCal, with: withCal } }, samples: { train: train.length, test: test.length, all: rows.length },
     changes: prev ? Object.fromEntries(K.map(k => [k, +(LIVE.w[k] - (prev.live.w[k] || 0)).toFixed(3)])) : null };
   fs.writeFileSync(path.join(DIR, 'model.json'), JSON.stringify(model));

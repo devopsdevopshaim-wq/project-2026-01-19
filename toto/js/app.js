@@ -1135,7 +1135,8 @@ function setStatus() {
   const latest = Object.values(DB.leagues).map(L => L.lastResult).filter(Boolean).sort().pop();
   const el = $('#status');
   const ok = Object.values(DB.live).some(x => x.ok);
-  el.textContent = `${ok ? 'מעודכן חי · ' : ''}תוצאות עד ${latest ? dmy(latest) : '–'}${DB.model ? ` · למידה ${dmy(DB.model.updated)}` : ''}`;
+  const auto = DB.model && DB.model.updatedAt ? `עדכון אוטומטי ${dmy(DB.model.updatedAt.slice(0, 10))} ${DB.model.updatedAt.slice(11)}` : (DB.model ? `למידה ${dmy(DB.model.updated)}` : '');
+  el.textContent = `${ok ? 'חי · ' : ''}תוצאות עד ${latest ? dmy(latest) : '–'}${auto ? ' · ' + auto : ''}`;
   el.className = 'fresh' + (latest && daysBetween(latest, todayISO()) > 6 ? ' warn' : '');
 }
 
