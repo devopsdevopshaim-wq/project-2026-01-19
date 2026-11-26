@@ -57,16 +57,30 @@ function findOrAddTeam(L, name) {
   return addTeam(L, name, k);
 }
 
+// Data files: the auto-updated branch (GitHub Actions, every 2 hours) first, the copy bundled with the site as fallback.
+const DATA_REMOTE = 'https://raw.githubusercontent.com/devopsdevopshaim-wq/project-2026-01-19/toto-data/';
+const DATA = { src: {}, remoteDown: false };
+async function fetchData(name) {
+  const local = typeof location === 'undefined' || /^(localhost|127\.)/.test(location.hostname);
+  if (!local && !DATA.remoteDown) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 9000);
+    try {
+      const r = await fetch(DATA_REMOTE + name + '?t=' + Math.floor(Date.now() / 300000), { signal: ctl.signal });
+      if (r.ok) { const j = await r.json(); DATA.src[name] = 'remote'; return j; }
+      if (r.status !== 404) DATA.remoteDown = true;
+    } catch (e) { DATA.remoteDown = true; } finally { clearTimeout(timer); }
+  }
+  const r = await fetch('data/' + name, { cache: 'no-cache' });
+  if (!r.ok) throw new Error(name + ' ' + r.status);
+  DATA.src[name] = 'local';
+  return r.json();
+}
+
 async function loadBundled() {
-  const r = await fetch('data/history.json', { cache: 'no-cache' });
-  if (!r.ok) throw new Error('history.json ' + r.status);
-  const d = await r.json();
+  const d = await fetchData('history.json');
   DB.built = d.built;
-  // Learned weights + per-league calibration (written weekly by tools/train.js).
-  try {
-    const mr = await fetch('data/model.json', { cache: 'no-cache' });
-    if (mr.ok) { const mj = await mr.json(); DB.model = mj; if (mj.live) FW = mj.live; }
-  } catch (e) { /* keep built-in weights */ }
+  // Learned weights + per-league calibration (written by tools/train.js on every update).
+  try { const mj = await fetchData('model.json'); DB.model = mj; if (mj.live) FW = mj.live; } catch (e) { /* keep built-in weights */ }
   for (const code of Object.keys(LEAGUES)) DB.leagues[code] = emptyLeague(code);
   for (const [code, src] of Object.entries(d.leagues)) {
     const L = DB.leagues[code];

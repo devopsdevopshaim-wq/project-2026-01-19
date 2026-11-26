@@ -1,0 +1,68 @@
+# Toto Smart: automatic data update.
+# Every 2 hours: fresh results and fixtures (openfootball, ESPN, TheSportsDB), basketball, the learning
+# step (weights, calibration, track record) and the real prediction log (last prediction before kickoff).
+# The output goes to the 'toto-data' branch as a single commit that replaces the previous one, so the
+# repository does not grow with every run. The site reads its data from that branch.
+name: Toto data update
+
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: toto-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore accumulated files from the data branch
+        # The prediction log, the weekly frozen snapshots and the learning log grow over time;
+        # everything else is rebuilt from scratch. toto_week.json always comes from main.
+        run: |
+          if git fetch --depth=1 origin toto-data; then
+            mkdir -p /tmp/prev
+            git archive FETCH_HEAD | tar -x -C /tmp/prev
+            for f in pred_log.json model_log.json; do
+              if [ -f "/tmp/prev/$f" ]; then cp "/tmp/prev/$f" toto/data/; fi
+            done
+            if [ -d /tmp/prev/frozen ]; then mkdir -p toto/data/frozen && cp -n /tmp/prev/frozen/*.json toto/data/frozen/ || true; fi
+          else
+            echo "No data branch yet: starting fresh."
+          fi
+
+      - name: Build data and learn
+        working-directory: toto
+        run: |
+          python3 tools/build_data.py
+          python3 tools/build_basketball.py
+          node tools/train.js
+
+      - name: Publish to the data branch
+        run: |
+          mkdir -p /tmp/out
+          cp -r toto/data/. /tmp/out/
+          cd /tmp/out
+          git init -q -b toto-data
+          git config user.name "toto-bot"
+          git config user.email "toto-bot@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Toto data $(TZ=Asia/Jerusalem date '+%Y-%m-%d %H:%M')"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" toto-data
+          echo "Published $(ls | wc -l) entries at $(TZ=Asia/Jerusalem date '+%H:%M')"

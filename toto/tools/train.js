@@ -135,6 +135,21 @@ vm.runInContext(`(async () => {
   upcoming.sort((a, b) => (a[1] + a[2]).localeCompare(b[1] + b[2]));
   fs.writeFileSync(path.join(DIR, 'predictions.json'), JSON.stringify({ updated: TODAY, hold: HOLD, track, upcoming }));
 
+  // ---- 4b. real prediction log: the last prediction made before each kickoff, never changed afterwards ----
+  const nowIL = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+  const started = (d, t) => d < TODAY || (d === TODAY && (!t || t <= nowIL));
+  const logFileP = path.join(DIR, 'pred_log.json');
+  const plog = fs.existsSync(logFileP) ? JSON.parse(fs.readFileSync(logFileP)) : {};
+  let logged = 0;
+  for (const u of upcoming) {
+    const [code, d, t, hk, ak, hn, an, p1, px, p2] = u;
+    if (started(d, t)) continue;
+    plog[code + '|' + hk + '|' + ak + '|' + d] = [code, d, t, hk, ak, hn, an, p1, px, p2, TODAY + ' ' + nowIL];
+    logged++;
+  }
+  fs.writeFileSync(logFileP, JSON.stringify(plog));
+  console.log('prediction log:', Object.keys(plog).length, 'games,', logged, 'updated before kickoff');
+
   // ---- 5. frozen weekly snapshot (one per ISO week, never overwritten) ----
   const fdir = path.join(DIR, 'frozen');
   if (!fs.existsSync(fdir)) fs.mkdirSync(fdir);

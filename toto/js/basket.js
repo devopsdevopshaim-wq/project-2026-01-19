@@ -38,9 +38,7 @@ function bskHe(n) {
 
 async function loadBasketball() {
   try {
-    const r = await fetch('data/basketball.json', { cache: 'no-cache' });
-    if (!r.ok) return;
-    const d = await r.json();
+    const d = await fetchData('basketball.json');
     BSK.built = d.built;
     for (const [code, src] of Object.entries(d.leagues)) {
       BSK.leagues[code] = {

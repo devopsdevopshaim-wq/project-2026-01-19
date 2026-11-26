@@ -871,15 +871,42 @@ function calibChart(buckets) {
   <div class="legend"><span>ציר אופקי: כמה המערכת הייתה בטוחה · ציר אנכי: כמה פעמים צדקה בפועל · קו מקווקו = כיול מושלם</span></div>`;
 }
 
+// Real predictions: saved by the automatic update before each kickoff and never changed after it.
+function realLog() {
+  const out = [];
+  for (const v of Object.values(EXTRA.plog || {})) {
+    const [code, d, t, hk, ak, hn, an, p1, px, p2, made] = v;
+    const L = DB.leagues[code]; let m = null;
+    if (L) { const h = L.keyIdx[hk], a = L.keyIdx[ak]; if (h != null && a != null) m = L.m.find(x => x.h === h && x.a === a && Math.abs(daysBetween(x.d, d)) <= 4) || null; }
+    const P = { '1': p1, 'X': px, '2': p2 }, pick = bestPick(P), res = m && m.hg != null ? resultCode(m.hg, m.ag) : null;
+    const order = Object.entries(P).sort((x, y) => y[1] - x[1]).map(x => x[0]);
+    out.push({ code, d, t, hn, an, P, pick, made, m, res, hit: res ? pick === res : null, hit2: res ? (order[0] === res || order[1] === res) : null });
+  }
+  return out.sort((x, y) => (y.d + y.t).localeCompare(x.d + x.t));
+}
+function realLogPanel() {
+  const all = realLog(), done = all.filter(r => r.res), pend = all.length - done.length;
+  const hits = done.filter(r => r.hit).length, hits2 = done.filter(r => r.hit2).length;
+  return `<div class="panel">
+    <div class="section-title"><h3>יומן ניחושים אמיתי</h3><span class="tag ${done.length >= 100 ? 'hit' : 'low'}">${done.length >= 100 ? 'מספיק נתונים' : 'נאסף'}</span></div>
+    <p class="note">כל עדכון אוטומטי (כל שעתיים) שומר את הניחוש לכל משחק שעוד לא התחיל. ברגע שהמשחק מתחיל הניחוש ננעל, ואחרי המשחק הוא נבדק מול התוצאה. זה המבחן האמיתי: בניגוד לבדיקה לאחור, אין כאן חישוב בדיעבד.${done.length < 100 ? ' עד שיצטברו כ־100 משחקים, האחוזים כאן תנודתיים ולא כדאי להסיק מהם.' : ''}</p>
+    <div class="kpis">
+      <div class="kpi hl"><b>${done.length ? pct(hits / done.length) : '–'}</b><span>פגיעה בניחוש בודד (${done.length} משחקים)</span></div>
+      <div class="kpi"><b>${done.length ? pct(hits2 / done.length) : '–'}</b><span>פגיעה בכפול</span></div>
+      <div class="kpi"><b>${pend}</b><span>ניחושים שמחכים לתוצאה</span></div>
+    </div>
+    ${done.length ? `<div class="plist">${done.slice(0, 12).map(r => `<div class="prow${r.hit ? ' is-hit' : ' is-miss'}"><div><div class="t">${esc(r.hn)} ${SC(r.m.hg, r.m.ag)} ${esc(r.an)}</div><div class="m">${esc(leagueName(r.code))} · ${dmy(r.d)} · ${oddsLine(r.P)} · נשמר ${esc(r.made)}</div></div><div class="r"><span class="pick">${r.pick}</span><span class="hitmark ${r.hit ? 'ok' : 'no'}">${r.hit ? '✓' : '✕'}</span></div></div>`).join('')}</div>` : '<p class="note">עדיין אין משחקים שהסתיימו ביומן. הראשונים ייבדקו אחרי משחקי סוף השבוע.</p>'}
+  </div>`;
+}
+
 async function loadFrozenIndex() {
   if (EXTRA.frozen) return EXTRA.frozen;
-  try { const r = await fetch('data/frozen/index.json', { cache: 'no-cache' }); EXTRA.frozen = r.ok ? await r.json() : []; } catch (e) { EXTRA.frozen = []; }
+  try { EXTRA.frozen = await fetchData('frozen/index.json'); } catch (e) { EXTRA.frozen = []; }
   return EXTRA.frozen;
 }
 async function loadFrozen(f) {
   if (EXTRA.frozenData[f]) return EXTRA.frozenData[f];
-  const r = await fetch('data/frozen/' + f, { cache: 'no-cache' });
-  EXTRA.frozenData[f] = await r.json();
+  EXTRA.frozenData[f] = await fetchData('frozen/' + f);
   return EXTRA.frozenData[f];
 }
 function scoreFrozen(fz) {
@@ -916,6 +943,7 @@ async function renderTrack() {
       <div class="kpi"><b>${pct(all.acc)}</b><span>פגיעה מאז יולי 2025 (${all.n.toLocaleString('he-IL')})</span></div>
       <div class="kpi"><b>33% / 67%</b><span>ניחוש אקראי: בודד / כפול</span></div>
     </div>
+    ${realLogPanel()}
     <div class="grid2">
       <div class="panel"><h3>תחזית מול תוצאה, לפי שבוע</h3><p class="note">עמודה = כמה ניחושים פגעו בפועל. נקודה = כמה המערכת ציפתה שיפגעו. כשהן קרובות, המערכת מעריכה את עצמה נכון.</p>${weeklyChart(T.filter(r => r.d >= addDays(todayISO(), -140)))}</div>
       <div class="panel"><h3>האם אפשר לסמוך על האחוזים?</h3>${M ? calibChart(M.buckets) : ''}
@@ -1125,9 +1153,9 @@ async function refreshAll(force) {
 }
 
 async function loadExtras() {
-  const get = async (u) => { try { const r = await fetch(u, { cache: 'no-cache' }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
-  const [pred, toto] = await Promise.all([get('data/predictions.json'), get('data/toto_week.json')]);
-  EXTRA.pred = pred;
+  const get = async (u) => { try { return await fetchData(u); } catch (e) { return null; } };
+  const [pred, toto, plog] = await Promise.all([get('predictions.json'), get('toto_week.json'), get('pred_log.json')]);
+  EXTRA.pred = pred; EXTRA.plog = plog || {};
   if (toto && toto.games && toto.games.length && (!toto.until || toto.until >= todayISO())) EXTRA.toto = toto;
 }
 
