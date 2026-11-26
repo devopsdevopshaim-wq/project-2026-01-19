@@ -49,6 +49,10 @@ jobs:
 
       - name: Build data and learn
         working-directory: toto
+        env:
+          # Previous data published on the data branch: the build adds to it and never drops stored games
+          # when a source is rate-limited. The copy in toto/data (from main) is read as well.
+          PREV_DIRS: /tmp/prev
         run: |
           python3 tools/build_data.py
           python3 tools/build_basketball.py

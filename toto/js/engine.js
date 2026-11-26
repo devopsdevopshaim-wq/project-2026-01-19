@@ -87,7 +87,7 @@ async function loadBundled() {
     if (!L) continue;
     src.teams.forEach(([name, key]) => addTeam(L, name, key));
     L.m = src.m.map(r => ({ d: r[0], t: r[5] || '', h: r[1], a: r[2], hg: r[3], ag: r[4], src: 'of' }));
-    if (src.espn) mergeEvents(L, src.espn.map(r => ({ d: r[0], t: r[1], home: r[2], away: r[3], hg: r[4], ag: r[5] })));
+    for (const k of ['espn', 'tsdb']) if (src[k]) mergeEvents(L, src[k].map(r => ({ d: r[0], t: r[1], home: r[2], away: r[3], hg: r[4], ag: r[5] })));
     finalizeLeague(L);
   }
 }

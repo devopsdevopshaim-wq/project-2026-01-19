@@ -45,24 +45,29 @@ def add(code, name, rows):
     done = [r for r in m if r[4] is not None]
     print(f"{code}: {len(m)} games, {len(done)} played, last {done[-1][0] if done else '-'}, {len(teams)} teams", file=sys.stderr)
 
-for code, lid, name in [("bsk.isr", "4474", "ליגת העל בכדורסל"), ("bsk.euro", "4546", "יורוליג")]:
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import tsdb as T
+_cy, SEAS = T.seasons()
+
+def prev_bsk(code):
     rows = []
-    for season in SEASONS:
-        empty = 0
-        for rnd in range(1, 60):
-            evs = (get(f"{TSDB}/eventsround.php?id={lid}&r={rnd}&s={season}") or {}).get("events") or []
-            time.sleep(1.2)
-            if not evs:
-                empty += 1
-                if empty >= 2: break
-                continue
-            empty = 0
-            for e in evs:
-                if not e.get("dateEvent") or not e.get("strHomeTeam"): continue
-                hs, as_ = e.get("intHomeScore"), e.get("intAwayScore")
-                done = hs not in (None, "") and as_ not in (None, "")
-                d, t = local(e["dateEvent"], e.get("strTime"))
-                rows.append([d, t, e["strHomeTeam"], e["strAwayTeam"], int(hs) if done else None, int(as_) if done else None])
+    for pth in T.prev_paths("basketball.json"):
+        try:
+            with open(pth) as f:
+                L = json.load(f).get("leagues", {}).get(code)
+        except Exception:
+            continue
+        if not L:
+            continue
+        tm = L["teams"]
+        rows = T.merge(rows, [[r[0], r[1], tm[r[2]], tm[r[3]], r[4], r[5]] for r in L["m"]])
+    return rows
+
+for code, lid, name in [("bsk.isr", "4474", "ליגת העל בכדורסל"), ("bsk.euro", "4546", "יורוליג")]:
+    prev = prev_bsk(code)
+    rows = []
+    for season, s0, s1, cur in SEAS:
+        rows += T.season_rows(lid, season, [r for r in prev if s0 <= r[0] < s1], cur, code)
     add(code, name, rows)
 
 # NBA: month by month (a year query is capped at 1000 games)
