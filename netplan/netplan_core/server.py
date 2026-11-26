@@ -14,6 +14,14 @@ from . import diagnostics, util
 
 WEB = util.resource_path("web")
 
+# Sites allowed to talk to the agent from the browser (the NetPlan site and local copies of it).
+ALLOWED_ORIGINS = {"https://devopsdevopshaim-wq.github.io"}
+LOCAL_ORIGIN = re.compile(r"^http://(localhost|127\.0\.0\.1)(:\d+)?$")
+
+
+def origin_ok(origin):
+    return bool(origin) and (origin in ALLOWED_ORIGINS or bool(LOCAL_ORIGIN.match(origin)))
+
 
 def make_handler(engine, port):
     allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
@@ -35,6 +43,10 @@ def make_handler(engine, port):
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
+            origin = self.headers.get("Origin", "")
+            if origin_ok(origin):
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Vary", "Origin")
             for k, v in (extra or {}).items():
                 self.send_header(k, v)
             self.end_headers()
@@ -53,6 +65,23 @@ def make_handler(engine, port):
             except ValueError:
                 return {}
 
+        def do_OPTIONS(self):
+            origin = self.headers.get("Origin", "")
+            if not self._host_ok() or not origin_ok(origin):
+                self.send_response(403)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-NetPlan")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
+            self.send_header("Access-Control-Max-Age", "600")
+            self.send_header("Vary", "Origin")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         # ------------------------------------------------------------ GET
         def do_GET(self):
             if not self._host_ok():
@@ -64,7 +93,9 @@ def make_handler(engine, port):
                 since = int((q.get("since") or ["0"])[0] or 0)
                 return self._send(200, engine.state(since))
             if p == "/api/ping":
-                return self._send(200, {"ok": True, "app": "netplan"})
+                return self._send(200, {"ok": True, "app": "netplan-agent", "version": "1.1.0"})
+            if p in ("/api/traffic.json", "/api/traffic"):
+                return self._send(200, engine.traffic())
             if p.startswith("/api/device/"):
                 did = int(p.rsplit("/", 1)[-1])
                 d = engine.store.device(did)
@@ -94,7 +125,8 @@ def make_handler(engine, port):
 
         # ------------------------------------------------------------ POST
         def do_POST(self):
-            if not self._host_ok() or self.headers.get("X-NetPlan") != "1":
+            origin = self.headers.get("Origin", "")
+            if not self._host_ok() or self.headers.get("X-NetPlan") != "1" or (origin and not origin_ok(origin)):
                 return self._send(403, {"error": "forbidden"})
             p = urlparse(self.path).path
             body = self._json()

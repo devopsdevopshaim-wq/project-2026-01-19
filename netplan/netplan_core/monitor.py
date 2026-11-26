@@ -370,12 +370,35 @@ class Engine:
         self.settings = self.store.save_settings(upd)
         return self.settings
 
+    def traffic(self):
+        """This computer's throughput in the NetPlan monitor format {ts, items:[{ip, rx_bps, tx_bps}]}."""
+        from . import sysinfo as si
+        now = time.time()
+        items = []
+        try:
+            io = si.psutil.net_io_counters(pernic=True) if si.psutil else {}
+        except Exception:
+            io = {}
+        name = (self.lan or {}).get("iface", {}).get("name")
+        c = io.get(name) if name else None
+        if c:
+            prev = getattr(self, "_tr_prev", None)
+            self._tr_prev = (now, c.bytes_recv, c.bytes_sent)
+            if prev and now - prev[0] > 0.2:
+                dt = now - prev[0]
+                rx = max(0, (c.bytes_recv - prev[1]) * 8 / dt)
+                tx = max(0, (c.bytes_sent - prev[2]) * 8 / dt)
+                ip = self.lan["ip"]
+                items = [{"ip": ip, "rx_bps": round(rx), "tx_bps": round(tx)},
+                         {"ip": "WAN", "rx_bps": round(rx), "tx_bps": round(tx)}]
+        return {"ts": int(now), "source": "netplan-agent", "items": items}
+
     # ------------------------------------------------------------ api payload
     def state(self, since_event=0):
         devs = self.devices()
         samples = list(self.samples)[-180:]
         return {
-            "app": {"version": "1.0.0", "os": util.OS_NAME, "started": self.started, "psutil": sysinfo.psutil is not None,
+            "app": {"version": "1.1.0", "os": util.OS_NAME, "started": self.started, "psutil": sysinfo.psutil is not None,
                     "ping": bool(util.which("ping")), "oui_vendors": oui.count(), "hostname": util.machine_name()},
             "progress": self.progress,
             "snapshot": self.snap,
