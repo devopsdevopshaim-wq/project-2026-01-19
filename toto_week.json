@@ -1,0 +1,23 @@
+{
+  "round": "264701",
+  "until": "2026-11-30",
+  "note": "רשימת המשחקים נאספה מאתרי ספורט (livegames, telesport) ב־25.11. המקורות לא היו זהים לגמרי; ודא מול הטופס הרשמי לפני השליחה.",
+  "games": [
+    { "home": "מכבי נתניה", "away": "הפועל באר שבע", "home_en": "Maccabi Netanya", "away_en": "Hapoel Beer Sheva", "league": "isr.1", "d": "2026-11-30" },
+    { "home": "בני סכנין", "away": "מכבי חיפה", "home_en": "Bnei Sakhnin", "away_en": "Maccabi Haifa", "league": "isr.1", "d": "2026-11-28" },
+    { "home": "הפועל רמת גן", "away": "עירוני קריית שמונה", "home_en": "Hapoel Ramat Gan", "away_en": "Hapoel Ironi Kiryat Shmona", "league": "isr.1", "d": "2026-11-28" },
+    { "home": "הפועל חיפה", "away": "עירוני טבריה", "home_en": "Hapoel Haifa", "away_en": "Ironi Tiberias", "league": "isr.1", "d": "2026-11-28" },
+    { "home": "ארסנל", "away": "מנצ'סטר סיטי", "home_en": "Arsenal", "away_en": "Manchester City", "league": "en.1", "d": "2026-11-29" },
+    { "home": "פולהאם", "away": "בורנמות'", "home_en": "Fulham", "away_en": "Bournemouth", "league": "en.1", "d": "2026-11-29" },
+    { "home": "סנדרלנד", "away": "טוטנהאם", "home_en": "Sunderland", "away_en": "Tottenham Hotspur", "league": "en.1", "d": "2026-11-29" },
+    { "home": "אברטון", "away": "ליברפול", "home_en": "Everton", "away_en": "Liverpool", "league": "en.1", "d": "2026-11-29" },
+    { "home": "איפסוויץ'", "away": "אסטון וילה", "home_en": "Ipswich Town", "away_en": "Aston Villa", "league": "en.1", "d": "2026-11-28" },
+    { "home": "ולנסיה", "away": "אוסאסונה", "home_en": "Valencia", "away_en": "Osasuna", "league": "es.1", "d": "2026-11-29" },
+    { "home": "סלטה ויגו", "away": "ויאריאל", "home_en": "Celta Vigo", "away_en": "Villarreal", "league": "es.1", "d": "2026-11-29" },
+    { "home": "קומו", "away": "יובנטוס", "home_en": "Como", "away_en": "Juventus", "league": "it.1", "d": "2026-11-29" },
+    { "home": "פאדרבורן", "away": "שאלקה", "home_en": "Paderborn", "away_en": "Schalke 04", "league": "de.1", "d": "2026-11-28" },
+    { "home": "פרייבורג", "away": "לייפציג", "home_en": "Freiburg", "away_en": "RB Leipzig", "league": "de.1", "d": "2026-11-29" },
+    { "home": "טולוז", "away": "רן", "home_en": "Toulouse", "away_en": "Rennes", "league": "fr.1", "d": "2026-11-29" },
+    { "home": "דרבי קאונטי", "away": "ווטפורד", "home_en": "Derby County", "away_en": "Watford", "league": "en.2", "d": "2026-11-28" }
+  ]
+}
